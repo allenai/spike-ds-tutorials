@@ -1,0 +1,44 @@
+{
+    "0": {
+        "query": "$[w={roles}]guitarist <E>musician:[e=PERSON]John plays the piano",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["roles"]
+    },
+    "1": {
+        "query": "<E>musician:[e=PERSON]John is a $[w={instruments}]piano $player",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["instruments"]
+    },
+    "2": {
+        "query": "<E>musician:[e=PERSON]John 's $[t]debut $[w={pieces}]album is fun",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["pieces"]
+    },
+    "3": {
+        "query": "<E>musician:[e=PERSON]John is the $[w={roles}]guitarist of the band",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["roles"]
+    },
+    "4": {
+        "query": ":w={genres}&e=O ~ <E>:e=PERSON",
+        "type": "boolean",
+        "case_strategy": "exact",
+        "label": "positive",
+        "lists": ["genres"]
+    },
+    "5": {
+        "query": "<E>:e=PERSON",
+        "type": "boolean",
+        "case_strategy": "ignore",
+        "label": "negative",
+        "lists": []
+    }
+}

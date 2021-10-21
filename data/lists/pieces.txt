@@ -1,0 +1,12 @@
+album
+single
+ep
+lp
+concert
+release
+opera
+gig
+recital
+compilation
+band
+orchestra
