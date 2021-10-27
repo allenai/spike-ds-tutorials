@@ -28,14 +28,21 @@
         "lists": ["roles"]
     },
     "4": {
-        "query": ":w={genres}&e=O ~ <E>:e=PERSON",
+        "query": "w={genres}&e=O ~ <E>musician:e=PERSON",
         "type": "boolean",
         "case_strategy": "exact",
         "label": "positive",
         "lists": ["genres"]
     },
     "5": {
-        "query": "<E>:e=PERSON",
+        "query": "$l={roles} $such as <E>musician:e=PERSON",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["roles"]
+    },
+    "6": {
+        "query": "<E>negative:e=PERSON&t=NNP",
         "type": "boolean",
         "case_strategy": "ignore",
         "label": "negative",
