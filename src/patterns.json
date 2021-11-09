@@ -28,18 +28,18 @@
         "lists": ["roles"]
     },
     "4": {
+        "query": "$[l={roles}]musicians $such as John and <E>musician:[e=PERSON]John",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["roles"]
+    },
+    "5": {
         "query": "w={genres}&e=O ~ <E>musician:e=PERSON",
         "type": "boolean",
         "case_strategy": "exact",
         "label": "positive",
         "lists": ["genres"]
-    },
-    "5": {
-        "query": "$l={roles} $such as <E>musician:e=PERSON",
-        "type": "syntactic",
-        "case_strategy": "ignore",
-        "label": "positive",
-        "lists": ["roles"]
     },
     "6": {
         "query": "<E>negative:e=PERSON&t=NNP",
@@ -47,5 +47,12 @@
         "case_strategy": "ignore",
         "label": "negative",
         "lists": []
+    },
+    "7": {
+        "query": "musician:w={hearst_musicians}",
+        "type": "boolean",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["hearst_musicians"]
     }
 }
