@@ -1,58 +1,66 @@
 {
     "0": {
-        "query": "$[w={roles}]guitarist <E>musician:[e=PERSON]John plays the piano",
+        "query": "$[w={roles}]guitarist <E>positive:[e=PERSON]John plays the piano",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"]
+        "lists": ["roles"],
+        "limit": 10000
     },
     "1": {
-        "query": "<E>musician:[e=PERSON]John is a $[w={instruments}]piano $player",
+        "query": "<E>positive:[e=PERSON]John is a $[w={instruments}]piano $player",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["instruments"]
+        "lists": ["instruments"],
+        "limit": 10000
     },
     "2": {
-        "query": "<E>musician:[e=PERSON]John 's $[t]debut $[w={pieces}]album is fun",
+        "query": "<E>positive:[e=PERSON]John 's $[t]debut $[w={pieces}]album is fun",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["pieces"]
+        "lists": ["pieces"],
+        "limit": 10000
     },
     "3": {
-        "query": "<E>musician:[e=PERSON]John is the $[w={roles}]guitarist of the band",
+        "query": "<E>positive:[e=PERSON]John is the $[w={roles}]guitarist of the band",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"]
+        "lists": ["roles"],
+        "limit": 10000
     },
     "4": {
-        "query": "$[l={roles}]musicians $such as John and <E>musician:[e=PERSON]John",
+        "query": "$[l={roles}]musicians $such as John and <E>positive:[e=PERSON]John",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"]
+        "lists": ["roles"],
+        "limit": 10000
     },
     "5": {
-        "query": "w={genres}&e=O ~ <E>musician:e=PERSON",
+        "query": "w={genres}&e=O ~ <E>positive:e=PERSON",
         "type": "boolean",
         "case_strategy": "exact",
         "label": "positive",
-        "lists": ["genres"]
+        "lists": ["genres"],
+        "limit": 10000
     },
     "6": {
         "query": "<E>negative:e=PERSON&t=NNP",
         "type": "boolean",
         "case_strategy": "ignore",
         "label": "negative",
-        "lists": []
+        "lists": [],
+        "limit": 30000
     },
     "7": {
-        "query": "musician:w={hearst_musicians}",
+        "query": "positive:w={hearst_musicians_bigger}",
         "type": "boolean",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["hearst_musicians"]
+        "lists": ["hearst_musicians_bigger"],
+        "limit": 100000
     }
 }
