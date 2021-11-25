@@ -56,11 +56,11 @@
         "limit": 30000
     },
     "7": {
-        "query": "positive:w={hearst_musicians_bigger}",
+        "query": "positive:w={hearst_musicians}",
         "type": "boolean",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["hearst_musicians_bigger"],
-        "limit": 100000
+        "lists": ["hearst_musicians"],
+        "limit": 30000
     }
 }

@@ -1,0 +1,36 @@
+{
+    "0": {
+        "query": "$[l={institute}]institutes $such as <E>positive:[e=ORG]Yale",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "hearst",
+        "lists": ["institute"],
+        "limit": 10000
+    },
+    "1": {
+        "query": "<E>positive:[e=ORG]Yale is an $[l={institute}]institute",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "hearst",
+        "lists": ["institute"],
+        "limit": 10000     
+    },
+    "0": {
+        "query": "$[l={institute}]institutes $including <E>positive:[e=ORG]Yale",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "hearst",
+        "lists": ["institute"],
+        "limit": 10000
+    },
+    "2": {
+        "query": "Jane got her $[w={certificate}]degree from <E>positive:[e=ORG]Yale",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["institute"],
+        "limit": 10000     
+    }
+    
+
+}
