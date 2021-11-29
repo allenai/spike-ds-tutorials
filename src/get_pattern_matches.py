@@ -75,7 +75,7 @@ def search_stream(spike_url, stream_location, pattern):
         if result['kind'] in ['continuation_url', 'tip']: continue
         data = result['value']['sub_matches']['main']
         entities = [ent for ent in data['sentence']['entities'] if
-                    ent["label"].startswith(args.entity_type)] if args.entity_type else []
+                    ent["label"].startswith(args.superclass_tag)] if args.superclass_tag else []
         yield {
             'words': data['words'],
             'captures': data['captures'],
@@ -91,7 +91,7 @@ def get_capture_text(match, label):
     return " ".join(tokens[first:last + 1])
 
 
-def get_hearst_based_list_of_musicians(patterns_dict):
+def get_hearst_based_list_of_exemplars(patterns_dict):
     exemplars = set()
 
     for idx, pattern in tqdm(patterns_dict.items()):
@@ -100,8 +100,8 @@ def get_hearst_based_list_of_musicians(patterns_dict):
             captures = sent["captures"]
             first, last = captures["positive"]["first"], captures["positive"]["last"]
             if first != last:
-                musician = " ".join(sent["words"][first:last+1])
-                exemplars.add(musician)
+                exemplar = " ".join(sent["words"][first:last+1])
+                exemplars.add(exemplar)
 
     with open(f'{args.list_path}/exemplars.txt', "w") as f:
         for exemplar in exemplars:
@@ -110,7 +110,7 @@ def get_hearst_based_list_of_musicians(patterns_dict):
     return exemplars
 
 
-def add_os_to_dataset():
+def add_sentences_without_targets_or_subclass_to_dataset():
     meaningless_query = {
         "111": {
             "query": "the", "type": "boolean", "case_strategy": "ignore", "label": "negative", "lists": [],
@@ -139,7 +139,7 @@ def add_os_to_dataset():
 def main():
     patterns = read_patterns_from_file(f'{args.patterns_file}')
     if args.hearst_patterns:
-        get_hearst_based_list_of_musicians(args.hearst_patterns)
+        get_hearst_based_list_of_exemplars(args.hearst_patterns)
         patterns.update({
             "-1": {
                 "query": "positive:w={exemplars}",
@@ -154,27 +154,30 @@ def main():
         limit = pattern["limit"]
         max_sents = int(limit * 0.90)
         label = pattern["label"]
-        if idx == "7":
-            with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
-                captures = set()
-                matches = write_pattern_matches(pattern)
-                print(f"number of matches for pattern {idx}: {len(matches)}")
-                shuffle(matches)
-                if matches:
-                    for match in matches[:max_sents]:
-                        capture = get_capture_text(match, label)
-                        if capture not in captures:
-                            f.write(match)
-                        captures.add(capture)
-                else:
-                    print("no matches")
+        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
+            captures = set()
+            matches = write_pattern_matches(pattern)
+            print(f"number of matches for pattern {idx}: {len(matches)}")
+            shuffle(matches)
+            shuffle(matches)
+            if matches:
+                for match in matches[:max_sents]:
+                    capture = get_capture_text(match, label)
+                    if args.unique_captures and capture in captures:
+                        continue
+                    f.write(match)
+                    captures.add(capture)
+            else:
+                print("no matches")
+    if args.distractor:
+        add_sentences_without_targets_or_subclass_to_dataset()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--entity_type', help='the type of entity you are looking for. If your desired capture is not '
-                                              'an entity, leave an empty string.', default="PERSON")
-    parser.add_argument('--suffix', help="If your'e making a version of the dataset and son't want to override the"
+    parser.add_argument('--superclass_tag', help='the type of entity you are looking for. If your desired capture is '
+                                                 'not an entity, leave an empty string.', default="PERSON")
+    parser.add_argument('--suffix', help="If your'e making a version of the dataset and don't want to override the"
                                          " existing files.", default='')
     parser.add_argument('--spike_matches_dir', help="", default='../data/spike_matches')
     parser.add_argument('--patterns_file', help="", default='patterns_hearst.json')
@@ -185,7 +188,9 @@ if __name__ == "__main__":
                                                   "if you already have a list of exemplars. "
                                                   "If so, name your file 'exemplars.txt'", default='')
     parser.add_argument('--distractor', help="To enrich the dataset with sentences with no relevant entities at all, "
-                                             "provide an entity type completely unrelated to your query.",
-                        default="GPE")
+                                             "provide an entity type completely unrelated to your query. e.g. GPE",
+                        default="")
+    parser.add_argument('--unique_captures', help='If True, each target entity will appear only once in the dataset.',
+                        dest="unique_captures", action="store_true")
     args = parser.parse_args()
     main()

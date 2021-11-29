@@ -19,7 +19,7 @@ transformers_logger.setLevel(logging.WARNING)
 def set_args():
     return {
             "seed": 42,
-            "labels_list": list(LABELS.values()),
+            "labels_list": LABELS,
             "reprocess_input_data": True,
             "overwrite_output_dir": True,
             "train_batch_size": BATCH_SIZE,
@@ -33,7 +33,7 @@ def set_args():
             "evaluate_during_training_steps": 50,
             "evaluate_during_training_verbose": True,
             "fp16": False,
-            "wandb_project": WANDB_NAME,
+            "wandb_project": args.wandb_project,
             "learning_rate": 0.0003,
             "warmup_ratio": 0.1,
             "logging_steps": 1,
@@ -55,14 +55,6 @@ def ingest_data_to_df(filepath, label_map):
                     raise Exception((tagged_word, line), e)
             sentence_number += 1
     return pd.DataFrame(tagged_data, columns=["sentence_id", "words", "labels"])
-
-
-def get_dataset_parts(dataset_path, dev_name, train_name, test_name):
-    devpath, trainpath, testpath = f"{dataset_path}/{dev_name}.txt", f"{dataset_path}/{train_name}.txt", f"{dataset_path}/{test_name}.txt"
-    train = ingest_data_to_df(trainpath, LABELS)
-    test = ingest_data_to_df(testpath, LABELS)
-    dev = ingest_data_to_df(devpath, LABELS)
-    return dev, train, test
 
 
 def untag_dev_sentences(devpath):
@@ -178,13 +170,20 @@ if __name__ == "__main__":
     EXPERIMENTS = '../experiments'
     BATCH_SIZE = 64
     EPOCHS = 3
-    LABELS = {"B": "B-MUS", "PB": "B-PER", "I": "I-MUS", "PI": "I-PER", "O": "O"}
     DEV, TRAIN = "split_dev_only_hearst_uniques", "split_train_only_hearst_uniques"
     parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
     parser.add_argument('--experiment_suffix', help='', default="../data")
     parser.add_argument('--dataset_path', help='', default="../data/musicians_dataset")
     parser.add_argument('--version_name', help='', default="all_without_person")
     parser.add_argument('--suffix', help='', default="_unique")
+    parser.add_argument('--target_tag', help='', default="MUS")
+    parser.add_argument('--superclass_tag', help='', default="PERSON")
+
 
     args = parser.parse_args()
+    LABELS = [f"B-{args.target_tag}",
+              f"B-{args.superclass_tag}",
+              f"I-{args.target_tag}",
+              f"I-{args.superclass_tag}",
+              "O"]
     main()

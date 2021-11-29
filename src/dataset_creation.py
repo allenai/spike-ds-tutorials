@@ -143,7 +143,7 @@ def flatten_list(ent_list):
     return [item for sublist in ent_list for item in sublist]
 
 
-def tag_sentence_one_token_per_row(sentence, with_person=True):
+def tag_sentence_one_token_per_row(sentence, with_superclass=True):
     if sentence["need_tagging"]:
         tags = []
         captures = [[*range(span[0], span[1] + 1)] for span in sentence["captures"]]
@@ -154,9 +154,9 @@ def tag_sentence_one_token_per_row(sentence, with_person=True):
         for i, word in enumerate(sentence['words']):
             if word != "'s":
                 if i in flat_captures:
-                    captures, tags = tag_span(captures, i, word, 'MUS', tags)
-                elif i in flat_entities and with_person:
-                    entities, tags = tag_span(entities, i, word, 'PER', tags)
+                    captures, tags = tag_span(captures, i, word, args.target_tag, tags)
+                elif i in flat_entities and with_superclass:
+                    entities, tags = tag_span(entities, i, word, args.superclass_tag, tags)
                 else:
                     tags.append((word, "O"))
             else:
@@ -185,13 +185,13 @@ def split_train_dev_test(fp, sample=False):
         datasize = len(all_lines)
         dev_border = int(datasize * 0.1) if not sample else 300
         test_border = int(datasize * 0.9) if not sample else datasize - 300
-        with open(fp.replace("train", "split_dev"), "w") as f:
+        with open(fp.replace(f"dataset_{args.version_name}", f"split_dev_{args.version_name}", 1), "w") as f:
             for line in all_lines[0:dev_border]:
                 f.write(line)
-        with open(fp.replace("train", "split_train"), "w") as f:
+        with open(fp.replace(f"dataset_{args.version_name}", f"split_train_{args.version_name}", 1), "w") as f:
             for line in all_lines[dev_border:test_border]:
                 f.write(line)
-        with open(fp.replace("train", "split_test"), "w") as f:
+        with open(fp.replace(f"dataset_{args.version_name}", f"split_test_{args.version_name}", 1), "w") as f:
             for line in all_lines[test_border:]:
                 f.write(line)
 
@@ -200,12 +200,12 @@ def main():
     dataset_path = f"{args.datapath}/{args.dataset_name}"
     train_set = collect_train_set_sentences(dataset_path=dataset_path)
 
-    with jsonlines.open(f'{dataset_path}/{args.version_name}.jsonl', 'w') as f:
+    with jsonlines.open(f'{dataset_path}/dataset_{args.version_name}.jsonl', 'w') as f:
         for sent in sample([v for v in train_set.values()], len(train_set)):
-            tags = tag_sentence_one_token_per_row(sent, with_person=False)
+            tags = tag_sentence_one_token_per_row(sent, with_superclass=False)
             sent_json = {"id": sent["id"], "sent_items": tags}
             f.write(sent_json)
-    split_train_dev_test(f'{dataset_path}/{args.version_name}.jsonl', sample=True)
+    split_train_dev_test(f'{dataset_path}/dataset_{args.version_name}.jsonl', sample=True)
 
 
 if __name__ == "__main__":
@@ -216,6 +216,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset_name', help='', default="musicians_dataset")
     parser.add_argument('--version_name', help='', default="all_without_person")
     parser.add_argument('--suffix', help='', default="_unique")
+    parser.add_argument('--target_tag', help='', default="MUSICIAN")
+    parser.add_argument('--superclass_tag', help='', default="PERSON")
 
     args = parser.parse_args()
     main()
