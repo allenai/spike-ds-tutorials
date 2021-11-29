@@ -97,7 +97,7 @@ def configure_model(args, model_type="roberta", model_name="roberta-base"):
 
 
 def send_prediction_to_conll(predictions, experiments_path):
-    with open(f"{experiments_path}/predictions/{EXPERIMENT_NAME}.conll", "w") as f:
+    with open(f"{experiments_path}/predictions/{args.wandb_project}-{args.experiment_suffix}.conll", "w") as f:
         for sent in predictions:
             for token_dict in sent:
                 for k, v in token_dict.items():
@@ -134,7 +134,7 @@ def print_confusion_matrix(model):
                 gold_tags.extend(tokens)
                 pred_tags.extend([list(x.values())[0] for x in predictions[0]])
 
-    matrix = confusion_matrix(gold_tags, pred_tags, labels=['B-MUS', 'B-PER', 'I-MUS', 'I-PER', 'O'], normalize="true")
+    matrix = confusion_matrix(gold_tags, pred_tags, labels=LABELS, normalize="true")
     return np.round(matrix, 3)
 
 
@@ -170,17 +170,19 @@ if __name__ == "__main__":
     EXPERIMENTS = '../experiments'
     BATCH_SIZE = 64
     EPOCHS = 3
-    DEV, TRAIN = "split_dev_only_hearst_uniques", "split_train_only_hearst_uniques"
     parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
-    parser.add_argument('--experiment_suffix', help='', default="../data")
+    parser.add_argument('--experiment_suffix', help='', default="manual")
     parser.add_argument('--dataset_path', help='', default="../data/musicians_dataset")
     parser.add_argument('--version_name', help='', default="all_without_person")
     parser.add_argument('--suffix', help='', default="_unique")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PERSON")
 
-
     args = parser.parse_args()
+    if args.experiment_suffix == "manual":
+        DEV, TRAIN = f"dev_converted", f"split_train_{args.version_name}"
+    else:
+        DEV, TRAIN = f"split_dev_{args.version_name}", f"split_train_{args.version_name}"
     LABELS = [f"B-{args.target_tag}",
               f"B-{args.superclass_tag}",
               f"I-{args.target_tag}",
