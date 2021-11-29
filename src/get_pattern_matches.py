@@ -132,7 +132,7 @@ def add_sentences_without_targets_or_subclass_to_dataset():
             shuffle(matches)
             print(f"number of matches for pattern {idx}: {len(matches)}")
             for match in matches:
-                if not [x for x in match["entities"] if x["label"] == "PERSON"]:
+                if not [x for x in match["entities"] if x["label"] == args.superclass_tag]:
                     f.write(match)
 
 
