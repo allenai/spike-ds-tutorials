@@ -43,8 +43,8 @@ def validate_sentence(capture_text, sentence_text, dev_and_test):
         return False
     if not sentence_is_not_too_short(sentence_text):
         return False
-    if sentence_text in dev_and_test:
-        return False
+#     if sentence_text in dev_and_test:
+#         return False
     return True
 
 
@@ -72,7 +72,7 @@ def get_entities(sentence, cap_first, cap_last):
 def collect_train_set_sentences(dataset_path):
     spike_matches_path = f"{args.datapath}/spike_matches"
     train_set = dict()
-    dev_and_test = get_dev_and_test_sentences(dataset_path)
+    dev_and_test = None# get_dev_and_test_sentences(dataset_path)
     invalids = 0
     same_sent = 0
     for file in glob.glob(f'{spike_matches_path}/**/*{args.suffix}.jsonl', recursive=True):

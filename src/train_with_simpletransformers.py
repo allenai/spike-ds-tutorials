@@ -147,6 +147,7 @@ def print_results(model):
 
 
 def main():
+    print(args)
     model_args = set_args()
     outputs = "./outputs"
     experiment_name = f"{args.wandb_project}-{args.experiment_suffix}"

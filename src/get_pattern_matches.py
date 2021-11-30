@@ -72,18 +72,20 @@ def search_stream(spike_url, stream_location, pattern):
     if len(results) == 0:
         print(f"Couldn't find any results for pattern {pattern}")
     for result in results:
-        if result['kind'] in ['continuation_url', 'tip']: continue
-        data = result['value']['sub_matches']['main']
-        entities = [ent for ent in data['sentence']['entities'] if
-                    ent["label"].startswith(args.superclass_tag)] if args.superclass_tag else []
-        yield {
-            'words': data['words'],
-            'captures': data['captures'],
-            'sentence_index': data['sentence_index'],
-            'highlights': data['highlights'],
-            'entities': entities
-        }
-
+        try:
+            if result.get('kind') in ['continuation_url', 'tip']: continue
+            data = result['value']['sub_matches']['main']
+            entities = [ent for ent in data['sentence']['entities'] if
+                        ent["label"].startswith(args.superclass_tag)] if args.superclass_tag else []
+            yield {
+                'words': data['words'],
+                'captures': data['captures'],
+                'sentence_index': data['sentence_index'],
+                'highlights': data['highlights'],
+                'entities': entities
+            }
+        except Exception as e:
+            raise Exception(result, e)
 
 def get_capture_text(match, label):
     tokens = match["words"]
@@ -93,7 +95,6 @@ def get_capture_text(match, label):
 
 def get_hearst_based_list_of_exemplars(patterns_dict):
     exemplars = set()
-
     for idx, pattern in tqdm(patterns_dict.items()):
         matches = write_pattern_matches(pattern)
         for sent in matches:
@@ -139,7 +140,8 @@ def add_sentences_without_targets_or_subclass_to_dataset():
 def main():
     patterns = read_patterns_from_file(f'{args.patterns_file}')
     if args.hearst_patterns:
-        get_hearst_based_list_of_exemplars(args.hearst_patterns)
+        hearst_patterns = read_patterns_from_file(f'{args.hearst_patterns}')
+        get_hearst_based_list_of_exemplars(hearst_patterns)
         patterns.update({
             "-1": {
                 "query": "positive:w={exemplars}",
@@ -147,12 +149,15 @@ def main():
                 "case_strategy": "ignore",
                 "label": "positive",
                 "lists": ["exemplars"],
-                "limit": 30000
+                "limit": args.hearst_limit
             }
         })
     for idx, pattern in tqdm(patterns.items()):
         limit = pattern["limit"]
-        max_sents = int(limit * 0.90)
+        try:
+            max_sents = int(limit * 0.90)
+        except:
+            raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
         label = pattern["label"]
         with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
             captures = set()
