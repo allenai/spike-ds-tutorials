@@ -7,7 +7,7 @@ import json
 import jsonlines
 import argparse
 
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 import numpy as np
 import shutil
 
@@ -106,6 +106,9 @@ def send_prediction_to_conll(predictions, experiments_path):
 
 def document_results(experiments_path, experiment_name, outputs):
     details = dict()
+    
+    
+    
     with open(f"{experiments_path}/{experiment_name}.json", "w") as f:
         with open(f"{outputs}/best_model/model_args.json", "r") as args:
             details["model_args"] = json.load(args)
@@ -116,10 +119,11 @@ def document_results(experiments_path, experiment_name, outputs):
             for r in res.readlines():
                 k, v = r.split(" = ")
                 details["eval_results"][k] = v
-        json.dump(details, f)
+        
+        json.dump(details, f, indent=4)
+        
 
-
-def print_confusion_matrix(model):
+def get_golds_and_predictions(model):
     gold_tags = []
     pred_tags = []
 
@@ -128,26 +132,58 @@ def print_confusion_matrix(model):
             words = [w[0] for w in line["sent_items"]]
             tokens = [w[1] for w in line["sent_items"]]
             predictions, raw_outputs = model.predict([" ".join(words)])
-            if len(words) != len(predictions[0]):
-                print(line)
-            else:
-                gold_tags.extend(tokens)
-                pred_tags.extend([list(x.values())[0] for x in predictions[0]])
+            gold_tags.extend(tokens)
+            pred_tags.extend([list(x.values())[0] for x in predictions[0]])
+            
+    return gold_tags, pred_tags
 
-    matrix = confusion_matrix(gold_tags, pred_tags, labels=LABELS, normalize="true")
+
+def tag_hits(df, pos, neg):
+    neg_labels = ["O", f"B-{neg}", f"I-{neg}"]
+    for i, row in df.iterrows():
+        if row["match"] == "_":
+            if (row["gold"] in neg_labels) and (row["pred"] in neg_labels):
+                df.at[i,'match'] = "tn"
+            elif (row["gold"] in neg_labels) and (row["pred"].endswith(pos)):
+                df.at[i,'match'] = "fp"
+            elif (row["gold"].endswith(pos)) and not (row["pred"].endswith(pos)):
+                df.at[i,'match'] = "fn"
+            elif (row["gold"] == f"B-{pos}") and (row["pred"] == f"B-{pos}"):
+                span = []
+                x = i+1
+                error = False
+                while df.at[x, "gold"] == f"I-{pos}":
+                    span.append(x)
+                    x += 1
+                    if df.at[x, "gold"] != df.at[x, "pred"]:
+                        error = True                    
+                if error:
+                    df.at[i,'match'] = "fn"
+                else:
+                    df.at[i,'match'] = "tp"
+                for x in span:
+                    df.at[x,'match'] = "--"
+                    
+
+def get_span_recall(filepath, positive_label, negative_label):
+    df = pd.read_csv(filepath, sep="\t", names=["gold", "pred"])
+    golds = df["gold"].tolist()
+    preds = df["pred"].tolist()
+    report = classification_report(golds, preds)
+    report = {x.strip()[0:5]:x.strip()[5:].split() for x in report.split("\n")[2:] if not x.startswith("O")}
+    df["match"] = "_"
+    tag_hits(df, positive_label, negative_label)
+    true_positive_spans = df[df["match"] == "tp"].count()
+    total_gold_positives = df[df["gold"] == f"B-{positive_label}"].count()
+    return report, true_positive_spans, total_gold_positives
+
+
+def get_confusion_matrix(gold_tags, pred_tags, labels):
+    matrix = confusion_matrix(gold_tags, pred_tags, labels=labels, normalize="true")
     return np.round(matrix, 3)
 
 
-def print_results(model):
-    matrix = print_confusion_matrix(model)
-    print("confusion matrix: \n", matrix)
-
-    with open(f"./outputs/best_model/eval_results.txt", "r") as f:
-        print("eval results: \n", f.read())
-
-
 def main():
-    print(args)
     model_args = set_args()
     outputs = "./outputs"
     experiment_name = f"{args.wandb_project}-{args.experiment_suffix}"
@@ -155,11 +191,10 @@ def main():
     train_set = import_jsons_to_df(args.dataset_path, TRAIN)
     model = configure_model(args=model_args)
     model.train_model(train_set, eval_data=dev_set)
-    clean_sentences = untagged_sentences(f"{args.dataset_path}/{DEV}.jsonl")
-    predictions, raw_outputs = model.predict(clean_sentences)
-    document_results(EXPERIMENTS, experiment_name, outputs)
-    send_prediction_to_conll(predictions, EXPERIMENTS)
-    print_results(model)
+    golds, preds = get_golds_and_predictions(model)
+    matrix = get_confusion_matrix(golds, preds, LABELS)
+    cls_report = classification_report(golds, preds, labels=LABELS)
+    document_results(args.experiments_path, experiment_name, outputs)
     outputs_dir = f"{outputs}/best_model"
     best_models_dir = f"./best_models/{args.experiment_name}"
     shutil.move(outputs_dir, best_models_dir)
@@ -168,7 +203,6 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    EXPERIMENTS = '../experiments'
     BATCH_SIZE = 64
     EPOCHS = 3
     parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
@@ -178,6 +212,8 @@ if __name__ == "__main__":
     parser.add_argument('--suffix', help='', default="_unique")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
+    parser.add_argument('--experiments_path', help='', default='../experiments')
+    
 
     args = parser.parse_args()
     if args.experiment_suffix == "manual":
