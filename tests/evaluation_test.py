@@ -62,17 +62,17 @@ def test_good_model_spans_eval(good_sample):
     report, true_positive_spans, total_gold_positives =  get_span_recall(good_sample, "MUS", "PER")
     assert float(report["B-MUS"][2]) == 1.00, report
     true_positives = true_positive_spans.values[0]
-    assert true_positives == 4
+    assert true_positives == 2
     assert true_positives / total_gold_positives.values[0] == 1, f"{true_positive_spans}, {total_gold_positives}"
 
 
 def test_good_confusion_matrix(good_sample, labels):
     golds, preds = get_golds_and_predictions(good_sample)
     matrix = get_confusion_matrix(golds, preds, labels)
-    assert list(matrix.diagonal()) == [1.0, 0.75, 1.0, 0.889, 1.0]  # normalised
+    assert list(matrix.diagonal()) == [1.0, 1.0, 1.0, 1.0, 1.0]  # normalised
 
 
 def test_bad_confusion_matrix( bad_sample, labels):
     golds, preds = get_golds_and_predictions(bad_sample)
     matrix = get_confusion_matrix(golds, preds, labels)
-    assert list(matrix.diagonal()) == [0.75, 0.583, 0.5, 0.778, 0.994]  # normalised
+    assert list(matrix.diagonal()) == [0.75, 0.0, 0.5, 0.0, 0.923]  # normalised
