@@ -6,13 +6,6 @@ import jsonlines
 import numpy as np
 import json
 
-def send_prediction_to_conll(predictions, experiments_path):
-    with open(f"{experiments_path}/predictions/{args.wandb_project}-{args.experiment_suffix}.conll", "w") as f:
-        for sent in predictions:
-            for token_dict in sent:
-                for k, v in token_dict.items():
-                    f.write(f"{k} {v}\n")
-
 
 def document_results(experiments_path, experiment_name, best_model_dir):
     details = dict()
@@ -79,12 +72,11 @@ def tag_hits(df, pos, neg):
                     if df.at[x, "gold"] != df.at[x, "pred"]:
                         error = True
                 if error:
-                    df.at[i,'match'] = "fn"
+                    df.at[i, 'match'] = "fn"
                 else:
-                    df.at[i,'match'] = "tp"
+                    df.at[i, 'match'] = "tp"
                 for x in span:
-                    df.at[x,'match'] = "--"
-
+                    df.at[x, 'match'] = "--"
 
 
 def get_confusion_matrix(gold_tags, pred_tags, labels):
@@ -93,27 +85,25 @@ def get_confusion_matrix(gold_tags, pred_tags, labels):
 
 
 def main():
-    best_model_dir = f"{args.experiments_path}/{args.wandb_project}-{args.experiment_suffix}/best_model"
+    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
     model = NERModel(
-    "roberta", best_model_dir
+        "roberta", best_model_dir
     )
     golds, preds = get_golds_and_predictions(model)
     matrix = get_confusion_matrix(golds, preds, LABELS)
     cls_report = classification_report(golds, preds, labels=LABELS)
-    report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
+    parsed_report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
     true_positive_spans, total_gold_positives = get_span_recall(golds, preds, args.target_tag, args.superclass_tag)
     print(f"confusion matrix:\n{matrix}")
     print(f"span recall:\n{true_positive_spans}\n{total_gold_positives}")
     print(f"span recall:\n{true_positive_spans / total_gold_positives}")
     print(f"classification report:\n{cls_report}")
-    
-    document_results(args.experiments_path, f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
+    print(f"parsed classification report:\n{parsed_report}")
+    document_results("./experiments", f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
 
-    
-    
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
 
     parser.add_argument('--version_name', help='', default="all_without_person")
     parser.add_argument('--suffix', help='', default="_unique")
@@ -122,8 +112,7 @@ if __name__ == "__main__":
     parser.add_argument('--superclass_tag', help='', default="PER")
     parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
     parser.add_argument('--experiment_suffix', help='', default="manual")
-    parser.add_argument('--dataset_path', help='', default="./data/musicians_dataset")    
-    parser.add_argument('--experiments_path', help='', default='./experiments')
+    parser.add_argument('--dataset_path', help='', default="./data/musicians_dataset")
 
     args = parser.parse_args()
     

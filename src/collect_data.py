@@ -87,18 +87,19 @@ def search_stream(spike_url, stream_location, pattern):
         except Exception as e:
             raise Exception(result, e)
 
+
 def get_capture_text(match, label):
     tokens = match["words"]
     first, last = match["captures"][label]["first"], match["captures"][label]["last"]
     return " ".join(tokens[first:last + 1])
 
 
-def get_hearst_based_list_of_exemplars(patterns_dict):
+def get_hearst_based_list_of_exemplars(patterns_dict: dict):
     exemplars = set()
     for idx, pattern in tqdm(patterns_dict.items()):
         matches = write_pattern_matches(pattern)
         for sent in matches:
-            captures = sent["captures"]
+            captures: dict = sent["captures"]
             first, last = captures["positive"]["first"], captures["positive"]["last"]
             if first != last:
                 exemplar = " ".join(sent["words"][first:last+1])

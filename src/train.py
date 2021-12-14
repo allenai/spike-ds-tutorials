@@ -1,13 +1,9 @@
 import logging
 
 from simpletransformers.ner import NERModel
-import re
-import json
 import jsonlines
 import argparse
 import pandas as pd
-import numpy as np
-import shutil
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger("transformers")
@@ -39,34 +35,6 @@ def set_args():
         }
 
 
-# def ingest_data_to_df(filepath, label_map):
-#     tagged_data = []
-#     sentence_number = 0
-#     with open(filepath, 'r') as f:
-#         for line in f.readlines():
-#             for tagged_word in line.split():
-#                 try:
-#                     word, tag = tagged_word.split("-[", 1)
-#                     old_tag = tag.split("]", 1)[0]
-#                     new_tag = label_map[old_tag]
-#                     tagged_data.append([sentence_number, word, new_tag])
-#                 except Exception as e:
-#                     raise Exception((tagged_word, line), e)
-#             sentence_number += 1
-#     return pd.DataFrame(tagged_data, columns=["sentence_id", "words", "labels"])
-
-
-# def untag_dev_sentences(devpath):
-#     output_path = f"sentences_{devpath}"
-#     clean_sentences = []
-#     with open(devpath, "r") as fin:
-#         for line in fin.readlines():
-#             sentence = re.sub('\-\[[A-Z]*\]',  '', line)
-#             clean_sentences.append(sentence)
-#     return clean_sentences
-
-
-# new data handling:
 def import_jsons_to_df(dataset_path, filename):
     fp = f"{dataset_path}/{filename}.jsonl"
     tagged_data = []
@@ -75,15 +43,6 @@ def import_jsons_to_df(dataset_path, filename):
             for token in line["sent_items"]:
                 tagged_data.append([line["id"], token[0], token[1]])
     return pd.DataFrame(tagged_data, columns=["sentence_id", "words", "labels"])
-
-
-# def untagged_sentences(fp):
-#     clean = []
-#     with jsonlines.open(fp, "r") as f:
-#         for line in f:
-#             words = [w[0] for w in line["sent_items"]]
-#             clean.append(" ".join(words))
-#     return clean
 
 
 def configure_model(args, model_type="roberta", model_name="roberta-base"):
@@ -97,7 +56,6 @@ def configure_model(args, model_type="roberta", model_name="roberta-base"):
 
 def main():
     model_args = set_args()
-    outputs = "./outputs"
     dev_set = import_jsons_to_df(args.dataset_path, DEV)
     train_set = import_jsons_to_df(args.dataset_path, TRAIN)
     model = configure_model(args=model_args)

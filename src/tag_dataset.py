@@ -69,14 +69,16 @@ def get_entities(sentence, cap_first, cap_last):
     return entities
 
 
-def collect_train_set_sentences(dataset_path):
+def collect_train_set_sentences():
     spike_matches_path = f"{args.datapath}/spike_matches"
     train_set = dict()
-    dev_and_test = None# get_dev_and_test_sentences(dataset_path)
+    dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
     same_sent = 0
     for file in glob.glob(f'{spike_matches_path}/**/*{args.suffix}.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
+            if args.use_only_hearst:
+                if "-1.jsonl" not in file: continue
             for sentence_dict in f:
                 label = args.label if 'positive' in file else 'negative'
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
@@ -130,8 +132,8 @@ def collect_train_set_sentences(dataset_path):
                         same_sent += 1
 
     # make sure there are significantly more negative examples than positive ones.
-    negatives = [(x,y) for x, y in train_set.items() if y["label"] != 'positive']
-    positives = [(x,y) for x, y in train_set.items() if y["label"] == 'positive']
+    negatives = [(x, y) for x, y in train_set.items() if y["label"] != 'positive']
+    positives = [(x, y) for x, y in train_set.items() if y["label"] == 'positive']
     print("Number of negatives: ", len(negatives))
     print("Number of positives: ", len(positives))
     print("invalids: ", invalids)
@@ -145,7 +147,7 @@ def flatten_list(ent_list):
     return [item for sublist in ent_list for item in sublist]
 
 
-def tag_sentence_one_token_per_row(sentence, with_superclass=True):
+def tag_sentence_one_token_per_row(sentence):
     if sentence["need_tagging"]:
         tags = []
         captures = [[*range(span[0], span[1] + 1)] for span in sentence["captures"]]
@@ -200,7 +202,7 @@ def split_train_dev_test(fp, sample=False):
 
 def main():
     dataset_path = f"{args.datapath}/{args.dataset_name}"
-    train_set = collect_train_set_sentences(dataset_path=dataset_path)
+    train_set = collect_train_set_sentences()
 
     with jsonlines.open(f'{dataset_path}/dataset_{args.version_name}.jsonl', 'w') as f:
         for sent in sample([v for v in train_set.values()], len(train_set)):
@@ -220,6 +222,6 @@ if __name__ == "__main__":
     parser.add_argument('--suffix', help='', default="_unique")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
-
+    parser.add_argument('--use_only_hearst', dest="use_only_hearst", action="store_false")
     args = parser.parse_args()
     main()
