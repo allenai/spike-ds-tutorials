@@ -78,7 +78,7 @@ def collect_train_set_sentences():
     for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
             if args.use_only_hearst:
-                if not (file.endswith("negative.jsonl") or file.endswith("hearst.jsonl")): 
+                if not (file.endswith("negative.jsonl") or file.endswith("-1.jsonl")): 
                     print(file)
                     continue
             for sentence_dict in f:

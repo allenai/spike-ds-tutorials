@@ -163,7 +163,7 @@ def collect_matches_with_patterns(patterns):
             raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
         label = pattern["label"]
         with jsonlines.open(f'{args.spike_matches_dir}/{label}/{args.prefix}{idx}.jsonl', 'w') as f:
-            captures = set()
+            captures = defaultdict(lambda: 0)
             matches = write_pattern_matches(pattern)
             print(f"number of matches for pattern {idx}: {len(matches)}")
             shuffle(matches)
@@ -178,8 +178,9 @@ def collect_matches_with_patterns(patterns):
                             continue
                     f.write(match)
                     captures[capture] += 1
-                sorted_matches = {k: v for k, v in sorted(captures.items(), key=lambda item: item[1], reverse=True)}
-                print(f"counter: {sorted_matches}")
+                sorted_matches = {k: v for k, v in sorted(captures.items(), key=lambda item: item[1], reverse=True) if v > 1}
+                if idx == "-1":
+                    print(f"counter: {sorted_matches}")
             else:
                 print("no matches")
 
@@ -191,7 +192,7 @@ def main():
         get_hearst_based_list_of_exemplars(hearst_patterns)
         patterns.update({
             "-1": {
-                "query": "positive:w={exemplars}",
+                "query": f"<E>positive:w={{exemplars}}&e={args.superclass_tag}",
                 "type": "boolean",
                 "case_strategy": "ignore",
                 "label": "positive",
