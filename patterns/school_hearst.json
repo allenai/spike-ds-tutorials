@@ -1,0 +1,34 @@
+{
+        "1": {
+            "query": "$[l={institute}]institutes $such as <E>positive:e=ORG",
+            "type": "syntactic",
+            "case_strategy": "ignore",
+            "label": "positive",
+            "lists": ["institute"],
+            "limit": 30000
+        },
+        "2": {
+            "query": "<E>positive:[e=PERSON]Yale $and $other $[l={institute}]institutes",
+            "type": "syntactic",
+            "case_strategy": "ignore",
+            "label": "positive",
+            "lists": ["institute"],
+            "limit": 30000
+        }, 
+        "3": {
+            "query": "$such $[l={institute}]institutes as <E>positive:[e=PERSON]Yale",
+            "type": "syntactic",
+            "case_strategy": "ignore",
+            "label": "positive",
+            "lists": ["institute"],
+            "limit": 30000
+        },
+        "4": {
+            "query": "<E>positive:[e=ORG]Yale is a $[w={institute}]institute",
+            "type": "syntactic",
+            "case_strategy": "ignore",
+            "label": "positive",
+            "lists": ["institute"],
+            "limit": 30000
+        }
+    }
