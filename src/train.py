@@ -71,10 +71,8 @@ if __name__ == "__main__":
     parser.add_argument('--experiment_suffix', help='', default="manual")
     parser.add_argument('--dataset_path', help='', default="../data/musicians_dataset")
     parser.add_argument('--version_name', help='', default="all_without_person")
-    parser.add_argument('--suffix', help='', default="_unique")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
-    parser.add_argument('--experiments_path', help='', default='../experiments')
 
     args = parser.parse_args()
     BATCH_SIZE = int(args.batch_size)
@@ -94,5 +92,5 @@ if __name__ == "__main__":
         LABELS = [f"B-{args.target_tag}",
                   f"I-{args.target_tag}",
                   "O"]
-    best_model_dir = f"{args.experiments_path}/{args.wandb_project}-{args.experiment_suffix}/best_model"
+    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
     main()

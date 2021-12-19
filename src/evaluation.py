@@ -106,7 +106,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--version_name', help='', default="all_without_person")
-    parser.add_argument('--suffix', help='', default="_unique")
     
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")

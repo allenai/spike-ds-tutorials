@@ -5,7 +5,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10000
+        "limit": 100
     },
     "1": {
         "query": "<E>positive:[e=ORG]Yale is an $[l={institute}]institute",
@@ -13,7 +13,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10000     
+        "limit": 100   
     },
     "2": {
         "query": "$[l={institute}]institutes $including <E>positive:[e=ORG]Yale",
@@ -21,7 +21,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10000
+        "limit": 100
     },
     "3": {
         "query": "Jane got her $[w={certificate}]degree from <E>positive:[e=ORG]Yale",
@@ -29,7 +29,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute", "certificate"],
-        "limit": 10000     
+        "limit": 100    
     },
     "4": {
         "query": "Jane $graduated from <E>positive:[e=ORG]Yale",
@@ -37,9 +37,9 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute", "certificate"],
-        "limit": 10000     
+        "limit": 100     
     },
-    "5": {
+    "negative": {
         "query": "<E>negative:e=ORG&t=NNP",
         "type": "boolean",
         "case_strategy": "ignore",

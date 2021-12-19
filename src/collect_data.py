@@ -144,7 +144,7 @@ def main():
         hearst_patterns = read_patterns_from_file(f'./patterns/{args.hearst_patterns}')
         get_hearst_based_list_of_exemplars(hearst_patterns)
         patterns.update({
-            "-1": {
+            "hearst": {
                 "query": "positive:w={exemplars}",
                 "type": "boolean",
                 "case_strategy": "ignore",
@@ -153,6 +153,8 @@ def main():
                 "limit": args.hearst_limit
             }
         })
+    print(patterns)
+    pass
     for idx, pattern in tqdm(patterns.items()):
         limit = pattern["limit"]
         try:
@@ -160,7 +162,7 @@ def main():
         except:
             raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
         label = pattern["label"]
-        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
+        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{args.prefix}{idx}.jsonl', 'w') as f:
             captures = set()
             matches = write_pattern_matches(pattern)
             print(f"number of matches for pattern {idx}: {len(matches)}")
@@ -183,7 +185,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--superclass_tag', help='the type of entity you are looking for. If your desired capture is '
                                                  'not an entity, leave an empty string.', default="PERSON")
-    parser.add_argument('--suffix', help="If your'e making a version of the dataset and don't want to override the"
+    parser.add_argument('--prefix', help="If your'e making a version of the dataset and don't want to override the"
                                          " existing files.", default='')
     parser.add_argument('--spike_matches_dir', help="", default='./data/spike_matches')
     parser.add_argument('--patterns_file', help="", default='patterns_hearst.json')

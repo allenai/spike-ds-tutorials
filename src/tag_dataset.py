@@ -75,10 +75,12 @@ def collect_train_set_sentences():
     dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
     same_sent = 0
-    for file in glob.glob(f'{spike_matches_path}/**/*{args.suffix}.jsonl', recursive=True):
+    for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
             if args.use_only_hearst:
-                if "-1.jsonl" not in file: continue
+                if not (file.endswith("negative.jsonl") or file.endswith("hearst.jsonl")): 
+                    print(file)
+                    continue
             for sentence_dict in f:
                 label = args.label if 'positive' in file else 'negative'
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
@@ -216,12 +218,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--label', help='', default="positive")
-    parser.add_argument('--datapath', help='', default="../data")
+    parser.add_argument('--datapath', help='', default="./data")
     parser.add_argument('--dataset_name', help='', default="musicians_dataset")
     parser.add_argument('--version_name', help='', default="all_without_person")
-    parser.add_argument('--suffix', help='', default="_unique")
+    parser.add_argument('--prefix', help='', default="unique_")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
-    parser.add_argument('--use_only_hearst', dest="use_only_hearst", action="store_false")
+    parser.add_argument('--use_only_hearst', dest="use_only_hearst", action="store_true")
     args = parser.parse_args()
     main()

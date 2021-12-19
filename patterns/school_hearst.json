@@ -5,7 +5,7 @@
             "case_strategy": "ignore",
             "label": "positive",
             "lists": ["institute"],
-            "limit": 10000
+            "limit": 30000
         },
         "2": {
             "query": "<E>positive:[e=PERSON]Yale $and $other $[l={institute}]institutes",
@@ -13,7 +13,7 @@
             "case_strategy": "ignore",
             "label": "positive",
             "lists": ["institute"],
-            "limit": 10000
+            "limit": 30000
         }, 
         "3": {
             "query": "$such $[l={institute}]institutes as <E>positive:[e=PERSON]Yale",
@@ -21,7 +21,7 @@
             "case_strategy": "ignore",
             "label": "positive",
             "lists": ["institute"],
-            "limit": 10000
+            "limit": 30000
         },
         "4": {
             "query": "<E>positive:[e=ORG]Yale is a $[w={institute}]institute",
@@ -29,6 +29,6 @@
             "case_strategy": "ignore",
             "label": "positive",
             "lists": ["institute"],
-            "limit": 10000
+            "limit": 30000
         }
     }
