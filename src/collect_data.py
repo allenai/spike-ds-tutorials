@@ -104,11 +104,11 @@ def get_hearst_based_list_of_exemplars(patterns_dict: dict):
             if first != last:
                 exemplar = " ".join(sent["words"][first:last+1])
                 exemplars.add(exemplar)
-
     with open(f'{args.list_path}/exemplars.txt', "w") as f:
         for exemplar in exemplars:
             if exemplar:
                 f.write(exemplar + "\n")
+    print(f"created {len(exemplars)} exemplars.")
     return exemplars
 
 
@@ -138,6 +138,36 @@ def add_sentences_without_targets_or_subclass_to_dataset():
                     f.write(match)
 
 
+def collect_matches_with_patterns(patterns):
+    for idx, pattern in tqdm(patterns.items()):
+        limit = pattern["limit"]
+        try:
+            max_sents = int(limit * 0.90)
+        except:
+            raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
+        label = pattern["label"]
+        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
+            captures = defaultdict(lambda: 0)
+            matches = write_pattern_matches(pattern)
+            print(f"number of matches for pattern {idx}: {len(matches)}")
+            shuffle(matches)
+            if matches:
+                print(f"1:::: len matches for pattern {idx}: {len(matches)}")
+                matches = matches[:max_sents]
+                print(f"2:::: len matches for pattern {idx}: {len(matches)}")
+                for match in matches:
+                    capture = get_capture_text(match, label)
+                    if args.max_duplicates > 0:
+                        if captures[capture] > args.max_duplicates:
+                            continue
+                    f.write(match)
+                    captures[capture] += 1
+                sorted_matches = {k: v for k, v in sorted(captures.items(), key=lambda item: item[1], reverse=True)}
+                print(f"counter: {sorted_matches}")
+            else:
+                print("no matches")
+
+
 def main():
     patterns = read_patterns_from_file(f'./patterns/{args.patterns_file}')
     if args.hearst_patterns:
@@ -150,31 +180,10 @@ def main():
                 "case_strategy": "ignore",
                 "label": "positive",
                 "lists": ["exemplars"],
-                "limit": args.hearst_limit
+                "limit": int(args.hearst_limit)
             }
         })
-    for idx, pattern in tqdm(patterns.items()):
-        limit = pattern["limit"]
-        try:
-            max_sents = int(limit * 0.90)
-        except:
-            raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
-        label = pattern["label"]
-        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{idx}{args.suffix}.jsonl', 'w') as f:
-            captures = set()
-            matches = write_pattern_matches(pattern)
-            print(f"number of matches for pattern {idx}: {len(matches)}")
-            shuffle(matches)
-            shuffle(matches)
-            if matches:
-                for match in matches[:max_sents]:
-                    capture = get_capture_text(match, label)
-                    if args.unique_captures and capture in captures:
-                        continue
-                    f.write(match)
-                    captures.add(capture)
-            else:
-                print("no matches")
+    collect_matches_with_patterns(patterns)
     if args.distractor:
         add_sentences_without_targets_or_subclass_to_dataset()
 
@@ -196,7 +205,10 @@ if __name__ == "__main__":
     parser.add_argument('--distractor', help="To enrich the dataset with sentences with no relevant entities at all, "
                                              "provide an entity type completely unrelated to your query. e.g. GPE",
                         default="")
-    parser.add_argument('--unique_captures', help='If True, each target entity will appear only once in the dataset.',
-                        dest="unique_captures", action="store_true")
+    parser.add_argument('--max_duplicates', help='If True, each target entity will appear only once in the dataset.',
+                        type=int, default=-1)
     args = parser.parse_args()
     main()
+
+    # hearst_patterns = read_patterns_from_file(f'./patterns/{args.hearst_patterns}')
+    # get_hearst_based_list_of_exemplars(hearst_patterns)
