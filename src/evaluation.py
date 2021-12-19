@@ -1,4 +1,5 @@
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
 from simpletransformers.ner import NERModel
@@ -23,23 +24,73 @@ def document_results(experiments_path, experiment_name, best_model_dir):
         json.dump(details, f, indent=4)
 
 
+def predict_sentence(model, idx, sentence):
+    words = [w[0] for w in sentence["sent_items"]]
+    tokens = [w[1] for w in sentence["sent_items"]]
+    predictions, raw_outputs = model.predict([" ".join(words)])
+    preds = predictions[0]
+    if len(tokens) != len(preds):
+        predicted_words = [list(x.keys())[0] for x in preds]
+        print(f"Skipped snetnece {idx}.Original sentence:\n{' '.join(words)} Predicted Sentence:\n{' '.join(predicted_words)}")
+        return None, None   
+    return tokens, preds
+        
+        
 def get_golds_and_predictions(model):
     gold_tags = []
     pred_tags = []
 
     with jsonlines.open(f"{args.dataset_path}/{DEV}.jsonl", "r") as f:
         for idx, line in enumerate(f):
-            words = [w[0] for w in line["sent_items"]]
-            tokens = [w[1] for w in line["sent_items"]]
-            predictions, raw_outputs = model.predict([" ".join(words)])
-            if len(tokens) != len(predictions[0]):
-                predicted_words = [list(x.keys())[0] for x in predictions[0]]
-                print(f"Skipped snetnece {idx}.Original sentence:\n{' '.join(words)}\nPredicted Sentence:\n{' '.join(predicted_words)}")
-                continue
-            gold_tags.extend(tokens)
-            pred_tags.extend([list(x.values())[0] for x in predictions[0]])
-
+            golds, preds = predict_sentence(model, idx, line)
+            if golds and preds:
+                gold_tags.extend(golds)
+                pred_tags.extend([list(x.values())[0] for x in preds]) 
     return gold_tags, pred_tags
+
+
+def get_train_captures():
+    train_captures = set()
+    with jsonlines.open(f"{args.dataset_path}/{TRAIN}.jsonl", "r") as f:
+        for line in f:
+            capture = ""
+            for item in line['sent_items']:
+                if item[1] == "B-SCHOOL":
+                    capture = item[0]
+                elif item[1] == "I-SCHOOL":
+                    capture += " " + item[0]
+                elif capture != "":
+                    train_captures.add(capture)
+                    capture = ""
+    return train_captures
+
+def get_complements_of_train(model, eval_set):
+    """
+    This function skips sentences if they have an entity that appeared in the train set.
+    """
+    gold_tags = []
+    pred_tags = []
+    
+    train_captures = get_train_captures()
+    with jsonlines.open(f"{args.dataset_path}/{eval_set}.jsonl", "r") as f:
+        for idx, line in enumerate(f):
+            capture = ""
+            found = False
+            for item in line['sent_items']:
+                if item[1] == "B-SCHOOL":
+                    capture = item[0]
+                elif item[1] == "I-SCHOOL":
+                    capture += " " + item[0]
+                elif capture != "":
+                    if capture in train_captures:
+                        found = True
+                    capture = ""
+            if not found:
+                golds, preds = predict_sentence(model, idx, line)
+                if golds and preds:
+                    gold_tags.extend(golds)
+                    pred_tags.extend([list(x.values())[0] for x in preds])
+    return gold_tags, pred_tags    
 
 
 def get_span_recall(golds, preds, positive_label, negative_label):
@@ -101,7 +152,28 @@ def main():
     print(f"parsed classification report:\n{parsed_report}")
     document_results("./experiments", f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
 
+    
+def main_test():
+    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
+    model = NERModel(
+        "roberta", best_model_dir
+    )
+    golds, preds = get_complements_of_train(model, TEST)
+    matrix = get_confusion_matrix(golds, preds, LABELS)
+    cls_report = classification_report(golds, preds, labels=LABELS)
+    parsed_report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
+    true_positive_spans, total_gold_positives = get_span_recall(golds, preds, args.target_tag, args.superclass_tag)
+    print(f"confusion matrix:\n{matrix}")
+    print(f"span recall:\n{true_positive_spans / total_gold_positives} ( {true_positive_spans} / {total_gold_positives}) ")
+    print(f"classification report:\n{cls_report}")
+    print(f"parsed classification report:\n{parsed_report}")
+#     document_results("./experiments", f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
+    disp = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=LABELS)
+    disp.plot()
+    plt.show()
 
+    
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
@@ -119,6 +191,9 @@ if __name__ == "__main__":
         DEV = f"dev_converted"
     else:
         DEV = f"split_dev_{args.version_name}"
+    TEST = f"split_test_{args.version_name}"
+    TRAIN = f"split_train_{args.version_name}"
+        
     if args.superclass_tag:
         LABELS = [f"B-{args.target_tag}",
                   f"B-{args.superclass_tag}",
@@ -129,4 +204,5 @@ if __name__ == "__main__":
         LABELS = [f"B-{args.target_tag}",
                   f"I-{args.target_tag}",
                   "O"]        
-    main()
+#     main()
+    main_test()
