@@ -122,18 +122,18 @@ def add_sentences_without_targets_or_subclass_to_dataset(limit):
         else:
             enum += 1
     meaningless_query = {
-        "1_neg": {
+        f"{args.prefix}1_neg": {
             "query": f"<E>negative:e={args.superclass_tag}&t=NNP", "type": "boolean", "case_strategy": "ignore",
             "label": "negative", "lists": [], "limit": limit},
-        "2_neg": {
+        f"{args.prefix}2_neg": {
             "query": "the", "type": "boolean", "case_strategy": "ignore", "label": "negative", "lists": [],
             "limit": limit
         },
-        "3_neg": {
+        f"{args.prefix}3_neg": {
             "query": "t=NN", "type": "boolean", "case_strategy": "ignore", "label": "negative", "lists": [],
             "limit": limit
         },
-        "4_neg": {
+        f"{args.prefix}4_neg": {
             "query": f"e={distractor}", "type": "boolean", "case_strategy": "ignore", "label": "negative",
             "lists": [], "limit": limit
         },
