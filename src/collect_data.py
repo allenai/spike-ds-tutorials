@@ -212,7 +212,7 @@ if __name__ == "__main__":
     parser.add_argument('--prefix', help="If your'e making a version of the dataset and don't want to override the"
                                          " existing files.", default='')
     parser.add_argument('--spike_matches_dir', help="", default='./data/spike_matches')
-    parser.add_argument('--patterns_file', help="", default='patterns_hearst.json')
+    parser.add_argument('--patterns_file', help="", default='hearst_patterns.json')
     parser.add_argument('--list_path', help="", default='./data/lists')
     parser.add_argument('--hearst_limit', help="max number of desired exemplars collected using hearst patterns",
                         default=30000)
