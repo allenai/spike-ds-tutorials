@@ -104,6 +104,29 @@ apps
 and so on.
 Update your list name in the json in `lists` as well, anywhere needed.
 
+#### Json Strcuture
+Each pattern in the pattern json file has the following fields:
+```
+        "query": "$[l={roles}]musicians $such as <E>positive:e=PERSON",
+        "type": "syntactic",
+        "case_strategy": "ignore",
+        "label": "positive",
+        "lists": ["roles"],
+        "limit": 10000
+```
+* query - the text to search for in SPIKE. See [help file](https://spike.staging.apps.allenai.org/datasets/pubmed/search/help) for more information.
+* type - type of query. Possible values include:
+  * `boolean` for basic queries 
+  * `syntactic` for structurally based queries
+  * `token` for sequence based queries.
+* case strategy - whether the search should be case-sensitive or not. Possible values: 
+  * `ignore` - entire query is case-insensitive
+  * `exact` - entire query is case-sensitive
+  * `smart` - only cased items in the query are case-sensitive
+* label - in the context of this code-base, always leave it `positive`.
+* lists - which lists participate in the query. For each list, make sure there is an equivalent file under `./data/lists`
+* limit - how many results to retrieve from SPIKE **per this query**. 
+
 <details>
 <summary>Find More Results</summary>
 The patterns file contain patterns known as `hearst patterns` (citation needed), and they are doing a great job at finding relevant examples.
@@ -125,10 +148,34 @@ Run the script:
 ```
 python ./src/collect_data.py [--max_duplicates 5] [--prefix products_] --superclass_tag PRODUCT --patterns patterns-copy.json
 ``` 
+These are the available parameters:
+* `--superclass_tag` - the type of entity you are looking for. If your desired capture is not an entity, leave an empty string.
+* `--prefix` - Adds a prefix to the output file name. Use this if you are making a version of the dataset and don't want to override the existing files.
+* `--patterns` - the name of your patterns file, e.g. products_patterns.json
+* `--max_duplicates` - Limit the number of times the same entity may appear in the collected dataset (int > 0). If unlimited (default), your model might memorize very common names (e.g. Madonna or Apple Music).   
+* `--include_patterns` - Flag this if you want sentences with patterns to appear directly in the train set. 
+* `--add_negatives` - Flag this if you want to add sentences with no mentions of the desired entity type to your dataset. 
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+After running, uou should see a new file created under `./data/spike_matches`.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+### Tag Collected Dataset
+
+Use the `tag_dataset.py` script to create a BIO-tagged version of the sentences. The output is a file with each line being a tagged sentence:
+```
+{"id": 65654, "sent_items": [["Clancy", "O"], ["continued", "O"], ["his", "O"], ["football", "O"], ["career", "O"], 
+["at", "O"], ["Merrimack", "B-SCHOOL"], ["College", "I-SCHOOL"], ["in", "O"], ["North", "O"], ["Andover", "O"], 
+[",", "O"], ["Massachusetts", "O"], [".", "O"]]}
+```
+These are the parameters available for this script:
+* --label - 
+* --datapath - 
+* --dataset_name - 
+* --version_name - 
+* --prefix - 
+* --target_tag - 
+* --superclass_tag - 
+* --include_patterns', help="If True, sentences with patterns appear directly in the train set.
+                        dest="include_patterns", action="store_true")
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
