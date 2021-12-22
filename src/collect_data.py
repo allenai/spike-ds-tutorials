@@ -112,7 +112,7 @@ def get_pattern_based_list_of_exemplars(patterns_dict: dict):
     return exemplars
 
 
-def add_sentences_without_targets_or_subclass_to_dataset(limit):
+def add_negatives_to_dataset(limit):
     enum = 0
     entity_types = ["ORG", "PERSON", "DATE", "GPE", "LOC", "ORDINAL", "MONEY"]
     distractor = ""
@@ -121,7 +121,7 @@ def add_sentences_without_targets_or_subclass_to_dataset(limit):
             distractor = entity_types[enum]
         else:
             enum += 1
-    meaningless_query = {
+    negative_queries = {
         f"{args.prefix}1_neg": {
             "query": f"<E>negative:e={args.superclass_tag}&t=NNP", "type": "boolean", "case_strategy": "ignore",
             "label": "negative", "lists": [], "limit": limit},
@@ -139,7 +139,7 @@ def add_sentences_without_targets_or_subclass_to_dataset(limit):
         },
     }
 
-    for idx, pattern in meaningless_query.items():
+    for idx, pattern in negative_queries.items():
         with jsonlines.open(f'./data/spike_matches/negative/{idx}.jsonl', 'w') as f:
             matches = write_pattern_matches(pattern)
             shuffle(matches)
@@ -154,8 +154,8 @@ def collect_matches_with_patterns(patterns):
         limit = pattern["limit"]
         try:
             max_sents = int(limit * 0.90)
-        except:
-            raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
+        except Exception as e:
+            raise Exception(f"{idx}::: {pattern}::: {type(limit)}; {e}")
         label = pattern["label"]
         with jsonlines.open(f'./data/spike_matches/{label}/{args.prefix}{idx}.jsonl', 'w') as f:
             captures = defaultdict(lambda: 0)
@@ -201,7 +201,8 @@ def main():
         })
     print(patterns)
     collect_matches_with_patterns(patterns)
-    add_sentences_without_targets_or_subclass_to_dataset(exemplar_pattern["limit"])
+    if args.add_negatives:
+        add_negatives_to_dataset(exemplar_pattern["limit"])
 
 
 if __name__ == "__main__":
@@ -215,6 +216,8 @@ if __name__ == "__main__":
                         type=int, default=-1)
     parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
                         dest="include_patterns", action="store_true")
+    parser.add_argument('--add_negatives', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="add_negatives", action="store_true")
     args = parser.parse_args()
     main()
 
