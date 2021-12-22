@@ -30,7 +30,7 @@ def get_lists(pattern):
     list_names = pattern["lists"]
     if list_names:
         for name in list_names:
-            with open(f"{args.list_path}/{name}.txt", "r") as f:
+            with open(f"./data/lists/{name}.txt", "r") as f:
                 for item in f.readlines():
                     lists[name].append(item.strip())
     return lists
@@ -94,17 +94,17 @@ def get_capture_text(match, label):
     return " ".join(tokens[first:last + 1])
 
 
-def get_hearst_based_list_of_exemplars(patterns_dict: dict):
+def get_pattern_based_list_of_exemplars(patterns_dict: dict):
     exemplars = set()
     for idx, pattern in tqdm(patterns_dict.items()):
         matches = write_pattern_matches(pattern)
         for sent in matches:
             captures: dict = sent["captures"]
             first, last = captures["positive"]["first"], captures["positive"]["last"]
-            if first != last:
+            if first != last:  # get only exemplars with 2+ words. Do we really want this?
                 exemplar = " ".join(sent["words"][first:last+1])
                 exemplars.add(exemplar)
-    with open(f'{args.list_path}/exemplars.txt', "w") as f:
+    with open(f'./data/lists/exemplars.txt', "w") as f:
         for exemplar in exemplars:
             if exemplar:
                 f.write(exemplar + "\n")
@@ -112,24 +112,35 @@ def get_hearst_based_list_of_exemplars(patterns_dict: dict):
     return exemplars
 
 
-def add_sentences_without_targets_or_subclass_to_dataset():
-    meaningless_query = {
-        "111": {
+def add_negatives_to_dataset(limit):
+    enum = 0
+    entity_types = ["ORG", "PERSON", "DATE", "GPE", "LOC", "ORDINAL", "MONEY"]
+    distractor = ""
+    while not distractor:
+        if entity_types[enum] != args.superclass_tag:
+            distractor = entity_types[enum]
+        else:
+            enum += 1
+    negative_queries = {
+        f"{args.prefix}1_neg": {
+            "query": f"<E>negative:e={args.superclass_tag}&t=NNP", "type": "boolean", "case_strategy": "ignore",
+            "label": "negative", "lists": [], "limit": limit},
+        f"{args.prefix}2_neg": {
             "query": "the", "type": "boolean", "case_strategy": "ignore", "label": "negative", "lists": [],
-            "limit": 4000
+            "limit": limit
         },
-        "222": {
+        f"{args.prefix}3_neg": {
             "query": "t=NN", "type": "boolean", "case_strategy": "ignore", "label": "negative", "lists": [],
-            "limit": 4000
+            "limit": limit
         },
-        "333": {
-            "query": f"e={args.distractor}", "type": "boolean", "case_strategy": "ignore", "label": "negative",
-            "lists": [], "limit": 4000
-        }
+        f"{args.prefix}4_neg": {
+            "query": f"e={distractor}", "type": "boolean", "case_strategy": "ignore", "label": "negative",
+            "lists": [], "limit": limit
+        },
     }
 
-    for idx, pattern in meaningless_query.items():
-        with jsonlines.open(f'{args.spike_matches_dir}/negative/{idx}.jsonl', 'w') as f:
+    for idx, pattern in negative_queries.items():
+        with jsonlines.open(f'./data/spike_matches/negative/{idx}.jsonl', 'w') as f:
             matches = write_pattern_matches(pattern)
             shuffle(matches)
             print(f"number of matches for pattern {idx}: {len(matches)}")
@@ -137,40 +148,22 @@ def add_sentences_without_targets_or_subclass_to_dataset():
                 if not [x for x in match["entities"] if x["label"] == args.superclass_tag]:
                     f.write(match)
 
-def main():
-    patterns = read_patterns_from_file(f'./patterns/{args.patterns_file}')
-    if args.hearst_patterns:
-        hearst_patterns = read_patterns_from_file(f'./patterns/{args.hearst_patterns}')
-        get_hearst_based_list_of_exemplars(hearst_patterns)
-        patterns.update({
-            "hearst": {
-                "query": "positive:w={exemplars}",
-                "type": "boolean",
-                "case_strategy": "ignore",
-                "label": "positive",
-                "lists": ["exemplars"],
-                "limit": int(args.hearst_limit)
-            }
-        })
 
-        
 def collect_matches_with_patterns(patterns):
     for idx, pattern in tqdm(patterns.items()):
         limit = pattern["limit"]
         try:
             max_sents = int(limit * 0.90)
-        except:
-            raise Exception(f"{idx}::: {pattern}::: {type(limit)}")
+        except Exception as e:
+            raise Exception(f"{idx}::: {pattern}::: {type(limit)}; {e}")
         label = pattern["label"]
-        with jsonlines.open(f'{args.spike_matches_dir}/{label}/{args.prefix}{idx}.jsonl', 'w') as f:
+        with jsonlines.open(f'./data/spike_matches/{label}/{args.prefix}{idx}.jsonl', 'w') as f:
             captures = defaultdict(lambda: 0)
             matches = write_pattern_matches(pattern)
             print(f"number of matches for pattern {idx}: {len(matches)}")
             shuffle(matches)
             if matches:
-                print(f"1:::: len matches for pattern {idx}: {len(matches)}")
                 matches = matches[:max_sents]
-                print(f"2:::: len matches for pattern {idx}: {len(matches)}")
                 for match in matches:
                     capture = get_capture_text(match, label)
                     if args.max_duplicates > 0:
@@ -186,23 +179,30 @@ def collect_matches_with_patterns(patterns):
 
 
 def main():
-    patterns = read_patterns_from_file(f'./patterns/{args.patterns_file}')
-    if args.hearst_patterns:
-        hearst_patterns = read_patterns_from_file(f'./patterns/{args.hearst_patterns}')
-        get_hearst_based_list_of_exemplars(hearst_patterns)
-        patterns.update({
-            "-1": {
+    patterns = read_patterns_from_file(f'./patterns/{args.patterns}')
+    exemplar_pattern = {
                 "query": f"<E>positive:w={{exemplars}}&e={args.superclass_tag}",
                 "type": "boolean",
                 "case_strategy": "ignore",
                 "label": "positive",
                 "lists": ["exemplars"],
-                "limit": int(args.hearst_limit)
             }
+    if not args.include_patterns:
+        exemplars = get_pattern_based_list_of_exemplars(patterns)
+        exemplar_pattern.update({"limit": len(exemplars)*abs(args.max_duplicates)+1})
+        patterns = {
+            "exemplars": exemplar_pattern
+        }
+    else:
+        limits = [int(pattern["limit"]) for idx, pattern in patterns.items()]
+        exemplar_pattern.update({"limit": sum(limits)})
+        patterns.update({
+            "exemplars": exemplar_pattern
         })
+    print(patterns)
     collect_matches_with_patterns(patterns)
-    if args.distractor:
-        add_sentences_without_targets_or_subclass_to_dataset()
+    if args.add_negatives:
+        add_negatives_to_dataset(exemplar_pattern["limit"])
 
 
 if __name__ == "__main__":
@@ -211,21 +211,13 @@ if __name__ == "__main__":
                                                  'not an entity, leave an empty string.', default="PERSON")
     parser.add_argument('--prefix', help="If your'e making a version of the dataset and don't want to override the"
                                          " existing files.", default='')
-    parser.add_argument('--spike_matches_dir', help="", default='./data/spike_matches')
-    parser.add_argument('--patterns_file', help="", default='hearst_patterns.json')
-    parser.add_argument('--list_path', help="", default='./data/lists')
-    parser.add_argument('--hearst_limit', help="max number of desired exemplars collected using hearst patterns",
-                        default=30000)
-    parser.add_argument('--hearst_patterns', help="file path to hearst patterns specific to your group. Leave empty "
-                                                  "if you already have a list of exemplars. "
-                                                  "If so, name your file 'exemplars.txt'", default='')
-    parser.add_argument('--distractor', help="To enrich the dataset with sentences with no relevant entities at all, "
-                                             "provide an entity type completely unrelated to your query. e.g. GPE",
-                        default="")
+    parser.add_argument('--patterns', help="", default='patterns_hearst.json')
     parser.add_argument('--max_duplicates', help='If True, each target entity will appear only once in the dataset.',
                         type=int, default=-1)
+    parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="include_patterns", action="store_true")
+    parser.add_argument('--add_negatives', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="add_negatives", action="store_true")
     args = parser.parse_args()
     main()
 
-    # hearst_patterns = read_patterns_from_file(f'./patterns/{args.hearst_patterns}')
-    # get_hearst_based_list_of_exemplars(hearst_patterns)

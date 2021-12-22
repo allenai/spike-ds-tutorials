@@ -77,8 +77,8 @@ def collect_train_set_sentences():
     same_sent = 0
     for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
-            if args.use_only_hearst:
-                if not (file.endswith("negative.jsonl") or file.endswith("-1.jsonl")): 
+            if not args.include_patterns:
+                if not (file.endswith("_neg.jsonl") or file.endswith("_exemplars.jsonl")):
                     print(file)
                     continue
             for sentence_dict in f:
@@ -224,6 +224,7 @@ if __name__ == "__main__":
     parser.add_argument('--prefix', help='', default="unique_")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
-    parser.add_argument('--use_only_hearst', dest="use_only_hearst", action="store_true")
+    parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="include_patterns", action="store_true")
     args = parser.parse_args()
     main()
