@@ -35,8 +35,8 @@ def set_args():
         }
 
 
-def import_jsons_to_df(dataset_path, filename):
-    fp = f"{dataset_path}/{filename}.jsonl"
+def import_jsons_to_df(filename):
+    fp = f"./data/{args.dataset}/{filename}.jsonl"
     tagged_data = []
     with jsonlines.open(fp, 'r') as f:
         for line in f:
@@ -56,32 +56,32 @@ def configure_model(args, model_type="roberta", model_name="roberta-base"):
 
 def main():
     model_args = set_args()
-    dev_set = import_jsons_to_df(args.dataset_path, DEV)
-    train_set = import_jsons_to_df(args.dataset_path, TRAIN)
+    dev_set = import_jsons_to_df(DEV)
+    train_set = import_jsons_to_df(TRAIN)
     model = configure_model(args=model_args)
     model.train_model(train_set, eval_data=dev_set)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--batch_size', help='', default="64")
-    parser.add_argument('--epochs', help='', default="3")
-    parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
-    parser.add_argument('--experiment_suffix', help='', default="manual")
-    parser.add_argument('--dataset_path', help='', default="../data/musicians_dataset")
-    parser.add_argument('--version_name', help='', default="all_without_person")
+    parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument('--prefix', help='', default="unique_")
     parser.add_argument('--target_tag', help='', default="MUS")
     parser.add_argument('--superclass_tag', help='', default="PER")
+    parser.add_argument('--batch_size', help='', default="64")
+    parser.add_argument('--epochs', help='', default="3")
+    parser.add_argument('--experiment', help='', default="manual")
+
 
     args = parser.parse_args()
+    wandb_project = f"{args.prefix}{args.dataset}"
     BATCH_SIZE = int(args.batch_size)
     EPOCHS = int(args.epochs)
     
-    if args.experiment_suffix == "manual":
-        DEV, TRAIN = f"dev_converted", f"split_train_{args.version_name}"
+    if args.experiment == "manual":
+        DEV, TRAIN = f"dev_converted", f"{args.prefix}split_train"
     else:
-        DEV, TRAIN = f"split_dev_{args.version_name}", f"split_train_{args.version_name}"
+        DEV, TRAIN = f"{args.prefix}split_dev", f"{args.prefix}split_train"
     if args.superclass_tag:
         LABELS = [f"B-{args.target_tag}",
                   f"B-{args.superclass_tag}",
@@ -92,5 +92,5 @@ if __name__ == "__main__":
         LABELS = [f"B-{args.target_tag}",
                   f"I-{args.target_tag}",
                   "O"]
-    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
+    best_model_dir = f"./experiments/{wandb_project}-{args.experiment}/best_model"
     main()

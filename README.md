@@ -3,8 +3,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
-    <img src="ai2-logo.svg" alt="Logo" width="80" height="80">
+  <a href="https://allenai.org/ai2-israel">
+    <img src="ai2-logo.svg" alt="Logo" width="85" height="85" style="padding-top: 18px">
+    <img src="spike-logo.png" alt="Logo" width="60" height="60">
   </a>
 <h1 align="center">Build Datasets with SPIKE</h1>
   <p align="center">
@@ -46,26 +47,20 @@ SPIKE's API to obtain sentences where the relevant entities are tagged as captur
 
 Creating a dataset is as simple as running a couple of command lines. 
 You can also use our script for training a NER model. The script uses [SimpleTransformers](), which in turn uses Weights and Biases (wandb). 
-To use this script, you need to create an account in [wandb](https://wandb.ai/site) first.
 
-### Prerequisites
 
-After creating a wandb account, you can either install the packages below, or simply run:
-
-```
-python -m pip install -r requirements.txt
-```
-#### Install packages manually
-
-  
 ### Installation
+To use the training script, you need to create an account in [wandb](https://wandb.ai/site) first.
 
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
+1. Clone the repo
    ```sh
    git clone https://github.com/allenai/spike-ds-tutorials.git
    ```
-3. Install Python packages
+2. Install Python packages. You can either run
+```
+python -m pip install -r requirements.txt
+```
+or install the packages individually:
   ```sh
   pip install requests
   pip install jsonlines
@@ -167,67 +162,69 @@ Use the `tag_dataset.py` script to create a BIO-tagged version of the sentences.
 [",", "O"], ["Massachusetts", "O"], [".", "O"]]}
 ```
 These are the parameters available for this script:
-* --label - 
-* --datapath - 
-* --dataset_name - 
-* --version_name - 
-* --prefix - 
-* --target_tag - 
-* --superclass_tag - 
-* --include_patterns', help="If True, sentences with patterns appear directly in the train set.
-                        dest="include_patterns", action="store_true")
+* `--dataset` - The script will eventually save the tagged dataset files (including splits) in `./data/<dataset>`.    
+* `--prefix` - A prefix to add to the output files. This is helpful for tracking which data were collected for which version. 
+* `--target_tag` - e.g. `MUSICIAN`, `SCHOOL` or any other non-canonical entity type, which suits what you are trying to identify.
+* `--superclass_tag` - The canonical NER entity type to which the target tag belongs. For example, for target-tag school, superclass tag is `ORG`.
+* `--include_patterns` - If True, sentences with patterns appear directly in the train set.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+### Train NER model
+To train an NER model with your newly tagged dataset, simply run the `./src/train.py` script with the following parameters.
+    
+* `--dataset`, `--prefix`, `--target_tag`, `--superclass_tag` - same as above. 
+* `--batch_size`, `--epochs` - set model hyper-parameters.
+* `--experiment` - If you run several experiments with the same dataset name (e.g. grid-search over hyper-parameters), specify a name for each specific experiment.
+The best model is stored in `./experiments/<prefix><args.dataset>-<experiment>/best_model`
+
+### Evaluate the model
+The given evaluation script loads the model from the best model directory, and retrieves score based on either test or dev set. You can change this
+
+* `--target_tag`, `--superclass_tag`, `--experiment`, `--dataset` - same as before 
+* `--eval_on_test` - If True, runs the evaluation on the test set. Default is False. 
+* `--eval_on_entire_set` - By default, sentences in the eval set are not considered if their entity/capture appears in the train set. Flag this if you want the entire set to be evaluated.
+
+## Running Example
+To identify educational institutes, we created a patterns file called `school_patterns.json`, which involves two list files: `institute` and `certificate`.
+Some parameters are the same for all scripts, so we export them:
+```
+$ export dataset=schools; export prefix="demo-"; export superclass=ORG; export target=SCH; export experiment=no-patterns-with-negs
+```
+
+#### collecting data from spike
+```
+$ python src/collect_data.py --max_duplicates 5 --prefix $prefix --superclass_tag $superclass --patterns school_patterns.json --add_negatives
+```
+#### tagging dataset
+```
+$ python src/tag_dataset.py --dataset $dataset --prefix $prefix --target_tag $target --superclass_tag $superclass
+```
+#### training the model
+```
+$ python src/train.py --dataset $dataset --prefix $prefix --target_tag $target --superclass_tag $superclass --experiment $experiment
+```
+#### Evaluate the process
+```
+$ python src/evaluation.py --dataset $dataset --prefix $prefix --target_tag $target --superclass_tag $superclass --experiment $experiment --eval_on_test --eval_on_entire_set
+```
 
 
-<!-- ROADMAP -->
-## Roadmap
-
-- [] Feature 1
-- [] Feature 2
-- [] Feature 3
-    - [] Nested Feature
-
-See the [open issues](https://github.com/github_username/repo_name/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
 ## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 <p align="right">(<a href="#top">back to top</a>)</p>
-
-
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the Apache License. See `LICENSE` for more information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-
-
-<!-- CONTACT -->
 ## Contact
-
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
-
-Project Link: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
