@@ -15,7 +15,8 @@
 
 [//]: # (    <a href="https://github.com/github_username/repo_name/issues">Visit our blog page  »</a>)
     <br />
-    <a href="https://github.com/github_username/repo_name/issues">Contact Us</a>
+
+[//]: # (    <a href="https://github.com/github_username/repo_name/issues">Contact Us</a>)
   </p>
 </div>
 
@@ -66,18 +67,10 @@ You can also use our script for training a NER model. The script uses [SimpleTra
    ```sh
    git clone https://github.com/allenai/spike-ds-tutorials.git
    ```
-2. Install Python packages. You can either run
+2. Install Python packages. You can simply run
 ```
 python -m pip install -r requirements.txt
 ```
-or install the packages individually:
-  ```sh
-  pip install requests
-  pip install jsonlines
-  pip install pandas
-  pip install simpletransformers
-  pip install -U scikit-learn
-  ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
