@@ -12,7 +12,8 @@
     <br />
     <a href="https://spike.apps.allenai.org/datasets"><strong>Visit SPIKE »</strong></a>
     <br />
-    <a href="https://github.com/github_username/repo_name/issues">Visit our blog page  »</a>
+
+[//]: # (    <a href="https://github.com/github_username/repo_name/issues">Visit our blog page  »</a>)
     <br />
     <a href="https://github.com/github_username/repo_name/issues">Contact Us</a>
   </p>
@@ -30,11 +31,22 @@
   </ol>
 
 
-## About The Project
+## About this Project
+This project provides tools to build a dataset for NER using AI2's SPIKE extractive search system.
+
+
+### SPIKE
 
 SPIKE is an extractive search system. It is a power-tool for search-based information extraction.
 
 SPIKE's API to obtain sentences where the relevant entities are tagged as captures.
+
+SPIKE queries retrieve sentences based on patterns of text, which are searched on a background dataset (Wikipedia for example). These patterns can be:
+* basic search - matches keywords anywhere in the sentence (e.g. `:e=ORG graduated`) 
+* sequence search -  matches sequences of keywords, in their given order (e.g. `<>:e=ORG University`)
+* structure - matches the given syntactic structure (e.g. `A:someone $graduated from B:[e=ORG]somewhere` retrieves sentences where word A is the subject of `graduated` and word B is its object, regardless of word order). 
+
+We recommend reading SPIKE's help file to understand these concepts better. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -45,11 +57,10 @@ SPIKE's API to obtain sentences where the relevant entities are tagged as captur
 ## Getting Started
 
 Creating a dataset is as simple as running a couple of command lines. 
-You can also use our script for training a NER model. The script uses [SimpleTransformers](), which in turn uses Weights and Biases (wandb). 
+You can also use our script for training a NER model. The script uses [SimpleTransformers](), which in turn uses Weights and Biases (wandb). You can create an account in [wandb](https://wandb.ai/site) to see the progress of your training.
 
 
 ### Installation
-To use the training script, you need to create an account in [wandb](https://wandb.ai/site) first.
 
 1. Clone the repo
    ```sh
@@ -70,16 +81,17 @@ or install the packages individually:
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-<!-- USAGE EXAMPLES -->
 ## Usage
 
-### Update Patterns
-SPIKE queries are based on patterns of text. These patterns can be basic (sentence with the words `x` and `y`), sequence (the words `x` and `y` appear in this order) or structure (sentences with the structure `x is y` but not necessarily with these words). In is highly recommended to read SPIKE's help file to understand these concepts better. 
+Before running the scripts for dataset creation and learning, let's have a look at the patterns that make the input for SPIKE. 
 
-As a starting point, make a copy of the file `./patterns/hearst_patterns.json`, and edit it to suit your case.
+### Update Patterns
+
+
+As a starting point, make a copy of the file `./patterns/hearst_patterns.json`, and edit it to suit your case. [Hearst patterns](https://aclanthology.org/C92-2082.pdf) are designed to get hyponyms (lexical items that belong to a higher category). 
 For example, if you are interested in identifying tech products, change your query from
 ```
-$[l={roles}]musicians $such as <E>positive:e=PERSON
+$[l={roles}]schools $such as <E>positive:e=ORG
 ```
 to
 ```
@@ -96,16 +108,16 @@ gadget
 app
 ```
 and so on. Note that since we search the lemma, the items in the list should be in singular form.
-Update your list name in the json in `lists` as well, anywhere needed.
+Update your list name in the json in `lists` as well, anywhere needed. See example in the next section.
 
-#### Json Strcuture
+#### Strcuture of patterns.json
 Each pattern in the pattern json file has the following fields:
 ```
-        "query": "$[l={roles}]musicians $such as <E>positive:e=PERSON",
+        "query": "$[l={institutes}]schools $such as <E>positive:e=ORG",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"],
+        "lists": ["institutes"],
         "limit": 10000
 ```
 * query - the text to search for in SPIKE. See [help file](https://spike.staging.apps.allenai.org/datasets/pubmed/search/help) for more information.
@@ -131,7 +143,7 @@ It is advised that you run your new queries directly in SPIKE, to verify that yo
 
 </details>
 
-### Call SPIKE API
+### SCRIPT 1: Collect data using SPIKE API
 
 After updating your patterns, call SPIKE's API to fetch examples, using the `collect_data.py` script.
 The collection has two scenarios:
@@ -152,7 +164,7 @@ These are the available parameters:
 
 After running, uou should see a new file created under `./data/spike_matches`.
 
-### Tag Collected Dataset
+### SCRIPT 2: Tag Collected Dataset
 
 Use the `tag_dataset.py` script to create a BIO-tagged version of the sentences. The output is a file with each line being a tagged sentence:
 ```
@@ -169,15 +181,16 @@ These are the parameters available for this script:
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-### Train NER model
+### SCRIPT 3: Train NER model
 To train an NER model with your newly tagged dataset, simply run the `./src/train.py` script with the following parameters.
     
 * `--dataset`, `--prefix`, `--target_tag`, `--superclass_tag` - same as above. 
 * `--batch_size`, `--epochs` - set model hyper-parameters.
 * `--experiment` - If you run several experiments with the same dataset name (e.g. grid-search over hyper-parameters), specify a name for each specific experiment.
-The best model is stored in `./experiments/<prefix><args.dataset>-<experiment>/best_model`
+* `--show_on_wandb` - Starts a project in wandb, where you can see the progress of your model. The name of the project is `<prefix><dataset>`
+The best model is stored in `./experiments/<prefix><dataset>-<experiment>/best_model`
 
-### Evaluate the model
+### SCRIPT 4: Evaluate the model
 The given evaluation script loads the model from the best model directory, and retrieves score based on either test or dev set. You can change this
 
 * `--target_tag`, `--superclass_tag`, `--experiment`, `--dataset` - same as before 

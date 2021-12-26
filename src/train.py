@@ -11,7 +11,7 @@ transformers_logger.setLevel(logging.WARNING)
 
 
 def set_args():
-    return {
+    model_args = {
             "seed": 42,
             "labels_list": LABELS,
             "reprocess_input_data": True,
@@ -27,12 +27,14 @@ def set_args():
             "evaluate_during_training_steps": 50,
             "evaluate_during_training_verbose": True,
             "fp16": False,
-            "wandb_project": args.wandb_project,
             "learning_rate": 0.0003,
             "warmup_ratio": 0.1,
             "logging_steps": 1,
             "best_model_dir": best_model_dir
         }
+    if args.show_on_wandb:
+        model_args.update({"wandb_project": project})
+    return model_args
 
 
 def import_jsons_to_df(filename):
@@ -71,10 +73,11 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', help='', default="64")
     parser.add_argument('--epochs', help='', default="3")
     parser.add_argument('--experiment', help='', default="")
-
+    parser.add_argument('--show_on_wandb', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="include_patterns", action="store_true")
 
     args = parser.parse_args()
-    wandb_project = f"{args.prefix}{args.dataset}"
+    project = f"{args.prefix}{args.dataset}"
     BATCH_SIZE = int(args.batch_size)
     EPOCHS = int(args.epochs)
     
@@ -92,5 +95,5 @@ if __name__ == "__main__":
         LABELS = [f"B-{args.target_tag}",
                   f"I-{args.target_tag}",
                   "O"]
-    best_model_dir = f"./experiments/{wandb_project}-{args.experiment}/best_model"
+    best_model_dir = f"./experiments/{project}-{args.experiment}/best_model"
     main()

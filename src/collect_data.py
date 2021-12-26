@@ -101,9 +101,9 @@ def get_pattern_based_list_of_exemplars(patterns_dict: dict):
         for sent in matches:
             captures: dict = sent["captures"]
             first, last = captures["positive"]["first"], captures["positive"]["last"]
-            if first != last:  # get only exemplars with 2+ words. Do we really want this?
-                exemplar = " ".join(sent["words"][first:last+1])
-                exemplars.add(exemplar)
+            # if first != last:  # get only exemplars with 2+ words. Do we really want this?
+            exemplar = " ".join(sent["words"][first:last+1])
+            exemplars.add(exemplar)
     with open(f'./data/lists/exemplars.txt', "w") as f:
         for exemplar in exemplars:
             if exemplar:

@@ -166,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument('--superclass_tag', help='', default="ORG")
     parser.add_argument('--experiment', help='', default="")
     parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument('--prefix', help='', default="")
     parser.add_argument('--eval_on_test', dest="eval_on_test", action="store_true")
     parser.add_argument('--eval_on_entire_set', dest="eval_on_entire_set", action="store_true")
 

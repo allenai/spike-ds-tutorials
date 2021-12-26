@@ -1,34 +1,34 @@
 {
     "1": {
-        "query": "$[l={roles}]musicians $such as <E>positive:e=PERSON",
+        "query": "$[l={institute}]schools $such as <E>positive:[e=ORG]Yale",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"],
+        "lists": ["institute"],
         "limit": 10000
     },
     "2": {
-        "query": "<E>positive:[e=PERSON]John $and $other $[l={roles}]musicians",
+        "query": "<E>positive:[e=ORG]Yale $and $other $[l={institute}]schools",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"],
+        "lists": ["institute"],
         "limit": 10000
     }, 
     "3": {
-        "query": "$such $[l={roles}]musicians as <E>positive:[e=PERSON]John",
+        "query": "$such $[l={institute}]schools as <E>positive:[e=ORG]Yale",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"],
+        "lists": ["institute"],
         "limit": 10000
     },
     "4": {
-        "query": "<E>positive:[e=PERSON]John is a $[w={roles}]musician",
+        "query": "<E>positive:[e=ORG]Yale is a $[w={institute}]school",
         "type": "syntactic",
         "case_strategy": "ignore",
         "label": "positive",
-        "lists": ["roles"],
+        "lists": ["institute"],
         "limit": 10000
     }
 }
