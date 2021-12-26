@@ -208,10 +208,10 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--superclass_tag', help='the type of entity you are looking for. If your desired capture is '
-                                                 'not an entity, leave an empty string.', default="PERSON")
+                                                 'not an entity, leave an empty string.', default="ORG")
     parser.add_argument('--prefix', help="If your'e making a version of the dataset and don't want to override the"
                                          " existing files.", default='')
-    parser.add_argument('--patterns', help="", default='patterns_hearst.json')
+    parser.add_argument('--patterns', help="", default='school_patterns.json')
     parser.add_argument('--max_duplicates', help='If True, each target entity will appear only once in the dataset.',
                         type=int, default=-1)
     parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",

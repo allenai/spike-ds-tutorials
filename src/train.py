@@ -66,11 +66,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', help='', default="schools")
     parser.add_argument('--prefix', help='', default="unique_")
-    parser.add_argument('--target_tag', help='', default="MUS")
-    parser.add_argument('--superclass_tag', help='', default="PER")
+    parser.add_argument('--target_tag', help='', default="SCHOOL")
+    parser.add_argument('--superclass_tag', help='', default="ORG")
     parser.add_argument('--batch_size', help='', default="64")
     parser.add_argument('--epochs', help='', default="3")
-    parser.add_argument('--experiment', help='', default="manual")
+    parser.add_argument('--experiment', help='', default="")
 
 
     args = parser.parse_args()

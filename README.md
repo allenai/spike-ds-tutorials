@@ -5,7 +5,6 @@
 <div align="center">
   <a href="https://allenai.org/ai2-israel">
     <img src="ai2-logo.svg" alt="Logo" width="85" height="85" style="padding-top: 18px">
-    <img src="spike-logo.png" alt="Logo" width="60" height="60">
   </a>
 <h1 align="center">Build Datasets with SPIKE</h1>
   <p align="center">
@@ -89,14 +88,14 @@ $[l={products}]devices $such as <E>positive:e=PRODUCT
 where `{products}` represents a list of words. To create such a list, create a new file named `products.txt` under `./data/lists`.
 The list of items should be a breakdown of the category, one item in each line, like so:
 ```
-devices
-softwares
-hardwares
-smartphones
-gadgets
-apps
+device
+software
+hardware
+smartphone
+gadget
+app
 ```
-and so on.
+and so on. Note that since we search the lemma, the items in the list should be in singular form.
 Update your list name in the json in `lists` as well, anywhere needed.
 
 #### Json Strcuture

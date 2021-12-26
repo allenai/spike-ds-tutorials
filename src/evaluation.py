@@ -162,9 +162,9 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--target_tag', help='', default="MUS")
-    parser.add_argument('--superclass_tag', help='', default="PER")
-    parser.add_argument('--experiment', help='', default="manual")
+    parser.add_argument('--target_tag', help='', default="SCHOOL")
+    parser.add_argument('--superclass_tag', help='', default="ORG")
+    parser.add_argument('--experiment', help='', default="")
     parser.add_argument('--dataset', help='', default="schools")
     parser.add_argument('--eval_on_test', dest="eval_on_test", action="store_true")
     parser.add_argument('--eval_on_entire_set', dest="eval_on_entire_set", action="store_true")
