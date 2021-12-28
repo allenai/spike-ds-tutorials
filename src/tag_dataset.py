@@ -3,6 +3,7 @@ import glob
 import jsonlines
 from random import sample, shuffle
 import argparse
+from pathlib import Path
 
 
 def remove_tags(sentence):
@@ -70,7 +71,7 @@ def get_entities(sentence, cap_first, cap_last):
 
 
 def collect_train_set_sentences():
-    spike_matches_path = f"{args.datapath}/spike_matches"
+    spike_matches_path = f"./data/spike_matches"
     train_set = dict()
     dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
@@ -78,11 +79,11 @@ def collect_train_set_sentences():
     for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
             if not args.include_patterns:
-                if not (file.endswith("_neg.jsonl") or file.endswith("_exemplars.jsonl")):
+                if not (file.endswith("_neg.jsonl") or file.endswith("exemplars.jsonl")):
                     print(file)
                     continue
             for sentence_dict in f:
-                label = args.label if 'positive' in file else 'negative'
+                label = file.split("/")[-2]
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
                 capture_text, cap_first, cap_last = get_capture(sentence_dict, label)
                 if capture_text:
@@ -191,39 +192,37 @@ def split_train_dev_test(fp, sample=False):
         datasize = len(all_lines)
         dev_border = int(datasize * 0.1) if not sample else 300
         test_border = int(datasize * 0.9) if not sample else datasize - 300
-        with open(fp.replace(f"dataset_{args.version_name}", f"split_dev_{args.version_name}", 1), "w") as f:
+        with open(fp.replace(f"dataset", f"split_dev", 1), "w") as fdev:
             for line in all_lines[0:dev_border]:
-                f.write(line)
-        with open(fp.replace(f"dataset_{args.version_name}", f"split_train_{args.version_name}", 1), "w") as f:
+                fdev.write(line)
+        with open(fp.replace(f"dataset", f"split_train", 1), "w") as ftrain:
             for line in all_lines[dev_border:test_border]:
-                f.write(line)
-        with open(fp.replace(f"dataset_{args.version_name}", f"split_test_{args.version_name}", 1), "w") as f:
+                ftrain.write(line)
+        with open(fp.replace(f"dataset", f"split_test", 1), "w") as ftest:
             for line in all_lines[test_border:]:
-                f.write(line)
+                ftest.write(line)
 
 
 def main():
-    dataset_path = f"{args.datapath}/{args.dataset_name}"
+    dataset_path = f"./data/{args.dataset}"
+    Path(dataset_path).mkdir(parents=True, exist_ok=True)
     train_set = collect_train_set_sentences()
 
-    with jsonlines.open(f'{dataset_path}/dataset_{args.version_name}.jsonl', 'w') as f:
+    with jsonlines.open(f'{dataset_path}/{args.prefix}dataset.jsonl', 'w') as f:
         for sent in sample([v for v in train_set.values()], len(train_set)):
             tags = tag_sentence_one_token_per_row(sent)
             sent_json = {"id": sent["id"], "sent_items": tags}
             f.write(sent_json)
-    split_train_dev_test(f'{dataset_path}/dataset_{args.version_name}.jsonl', sample=True)
+    split_train_dev_test(f'{dataset_path}/{args.prefix}dataset.jsonl', sample=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--label', help='', default="positive")
-    parser.add_argument('--datapath', help='', default="./data")
-    parser.add_argument('--dataset_name', help='', default="musicians_dataset")
-    parser.add_argument('--version_name', help='', default="all_without_person")
-    parser.add_argument('--prefix', help='', default="unique_")
-    parser.add_argument('--target_tag', help='', default="MUS")
-    parser.add_argument('--superclass_tag', help='', default="PER")
+    parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument('--prefix', help='', default="")
+    parser.add_argument('--target_tag', help='', default="SCHOOL")
+    parser.add_argument('--superclass_tag', help='', default="ORG")
     parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
                         dest="include_patterns", action="store_true")
     args = parser.parse_args()

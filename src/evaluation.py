@@ -40,7 +40,7 @@ def get_golds_and_predictions(model):
     gold_tags = []
     pred_tags = []
 
-    with jsonlines.open(f"{args.dataset_path}/{DEV}.jsonl", "r") as f:
+    with jsonlines.open(f"./data/{args.dataset}/{DEV}.jsonl", "r") as f:
         for idx, line in enumerate(f):
             golds, preds = predict_sentence(model, idx, line)
             if golds and preds:
@@ -51,7 +51,7 @@ def get_golds_and_predictions(model):
 
 def get_train_captures():
     train_captures = set()
-    with jsonlines.open(f"{args.dataset_path}/{TRAIN}.jsonl", "r") as f:
+    with jsonlines.open(f"./data/{args.dataset}/{TRAIN}.jsonl", "r") as f:
         for line in f:
             capture = ""
             for item in line['sent_items']:
@@ -64,6 +64,7 @@ def get_train_captures():
                     capture = ""
     return train_captures
 
+
 def get_complements_of_train(model, eval_set):
     """
     This function skips sentences if they have an entity that appeared in the train set.
@@ -72,7 +73,7 @@ def get_complements_of_train(model, eval_set):
     pred_tags = []
     
     train_captures = get_train_captures()
-    with jsonlines.open(f"{args.dataset_path}/{eval_set}.jsonl", "r") as f:
+    with jsonlines.open(f"./data/{args.dataset}/{eval_set}.jsonl", "r") as f:
         for idx, line in enumerate(f):
             capture = ""
             found = False
@@ -136,63 +137,48 @@ def get_confusion_matrix(gold_tags, pred_tags, labels):
 
 
 def main():
-    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
+    best_model_dir = f"./experiments/{wandb_project}-{args.experiment}/best_model"
     model = NERModel(
         "roberta", best_model_dir
     )
-    golds, preds = get_golds_and_predictions(model)
+    if args.eval_on_entire_set:
+        golds, preds = get_golds_and_predictions(model)
+    else:
+        golds, preds = get_complements_of_train(model, eval_set)
     matrix = get_confusion_matrix(golds, preds, LABELS)
     cls_report = classification_report(golds, preds, labels=LABELS)
     parsed_report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
     true_positive_spans, total_gold_positives = get_span_recall(golds, preds, args.target_tag, args.superclass_tag)
     print(f"confusion matrix:\n{matrix}")
-    print(f"span recall:\n{true_positive_spans}\n{total_gold_positives}")
-    print(f"span recall:\n{true_positive_spans / total_gold_positives}")
+    print(f"span recall:\n{true_positive_spans / total_gold_positives} ({true_positive_spans}/{total_gold_positives})")
     print(f"classification report:\n{cls_report}")
     print(f"parsed classification report:\n{parsed_report}")
-    document_results("./experiments", f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
-
-    
-def main_test():
-    best_model_dir = f"./experiments/{args.wandb_project}-{args.experiment_suffix}/best_model"
-    model = NERModel(
-        "roberta", best_model_dir
-    )
-    golds, preds = get_complements_of_train(model, TEST)
-    matrix = get_confusion_matrix(golds, preds, LABELS)
-    cls_report = classification_report(golds, preds, labels=LABELS)
-    parsed_report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
-    true_positive_spans, total_gold_positives = get_span_recall(golds, preds, args.target_tag, args.superclass_tag)
-    print(f"confusion matrix:\n{matrix}")
-    print(f"span recall:\n{true_positive_spans / total_gold_positives} ( {true_positive_spans} / {total_gold_positives}) ")
-    print(f"classification report:\n{cls_report}")
-    print(f"parsed classification report:\n{parsed_report}")
-#     document_results("./experiments", f"{args.wandb_project}-{args.experiment_suffix}", best_model_dir)
+    document_results("./experiments", f"{wandb_project}-{args.experiment}", best_model_dir)
     disp = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=LABELS)
     disp.plot()
     plt.show()
 
-    
-    
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--version_name', help='', default="all_without_person")
-    
-    parser.add_argument('--target_tag', help='', default="MUS")
-    parser.add_argument('--superclass_tag', help='', default="PER")
-    parser.add_argument('--wandb_project', help='', default="only_hearst_uniques")
-    parser.add_argument('--experiment_suffix', help='', default="manual")
-    parser.add_argument('--dataset_path', help='', default="./data/musicians_dataset")
+    parser.add_argument('--target_tag', help='', default="SCHOOL")
+    parser.add_argument('--superclass_tag', help='', default="ORG")
+    parser.add_argument('--experiment', help='', default="")
+    parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument('--prefix', help='', default="")
+    parser.add_argument('--eval_on_test', dest="eval_on_test", action="store_true")
+    parser.add_argument('--eval_on_entire_set', dest="eval_on_entire_set", action="store_true")
 
     args = parser.parse_args()
-    
-    if args.experiment_suffix == "manual":
+    wandb_project = f"{args.prefix}{args.dataset}"
+
+    if args.experiment == "manual":
         DEV = f"dev_converted"
     else:
-        DEV = f"split_dev_{args.version_name}"
-    TEST = f"split_test_{args.version_name}"
-    TRAIN = f"split_train_{args.version_name}"
+        DEV = f"{args.prefix}split_dev"
+    TEST = f"{args.prefix}split_test"
+    TRAIN = f"{args.prefix}split_train"
         
     if args.superclass_tag:
         LABELS = [f"B-{args.target_tag}",
@@ -203,6 +189,7 @@ if __name__ == "__main__":
     else:
         LABELS = [f"B-{args.target_tag}",
                   f"I-{args.target_tag}",
-                  "O"]        
-#     main()
-    main_test()
+                  "O"]
+
+    eval_set = TEST if args.eval_on_test else DEV
+    main()
