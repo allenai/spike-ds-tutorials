@@ -14,22 +14,23 @@ def get_tokens_info(row):
     ent_span = dict()
     for token in doc:
         words.append(token.text)
-        if token.ent_type_ == args.superclass_tag:
-            try:
-                if (token.is_sent_start or token.is_sent_end) or (
-                        doc[token.i].ent_type_ != doc[token.i - 1].ent_type_) and (
-                        doc[token.i].ent_type_ != doc[token.i + 1].ent_type_):
-                    ent_span.update({"first": token.i, "label": token.ent_type_, "last": token.i})
-                    entities.append(ent_span)
-                    ent_span = dict()
-                elif token.is_sent_start or (doc[token.i].ent_type_ != doc[token.i - 1].ent_type_):
-                    ent_span.update({"first": token.i, "label": token.ent_type_})
-                elif token.is_sent_end or (doc[token.i].ent_type_ != doc[token.i + 1].ent_type_):
-                    ent_span.update({"last": token.i})
-                    entities.append(ent_span)
-                    ent_span = dict()
-            except Exception as e:
-                print([t.text for t in doc], e)
+        if args.superclass_tag:
+            if token.ent_type_ == args.superclass_tag:
+                try:
+                    if (token.is_sent_start or token.is_sent_end) or (
+                            doc[token.i].ent_type_ != doc[token.i - 1].ent_type_) and (
+                            doc[token.i].ent_type_ != doc[token.i + 1].ent_type_):
+                        ent_span.update({"first": token.i, "label": token.ent_type_, "last": token.i})
+                        entities.append(ent_span)
+                        ent_span = dict()
+                    elif token.is_sent_start or (doc[token.i].ent_type_ != doc[token.i - 1].ent_type_):
+                        ent_span.update({"first": token.i, "label": token.ent_type_})
+                    elif token.is_sent_end or (doc[token.i].ent_type_ != doc[token.i + 1].ent_type_):
+                        ent_span.update({"last": token.i})
+                        entities.append(ent_span)
+                        ent_span = dict()
+                except Exception as e:
+                    print([t.text for t in doc], e)
     return words, entities
 
 
