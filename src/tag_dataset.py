@@ -53,8 +53,8 @@ def get_capture(sentence, label):
     tokens = sentence["words"]
     capture = sentence['captures'].get(label)
     if capture:
-        first = capture['first']
-        last = capture['last']
+        first = int(capture['first'])
+        last = int(capture['last'])
         capture_tokens = [t for i, t in enumerate(tokens) if first <= i <= last]
         return " ".join(capture_tokens), first, last
     else:
