@@ -73,8 +73,8 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', help='', default="64")
     parser.add_argument('--epochs', help='', default="3")
     parser.add_argument('--experiment', help='', default="")
-    parser.add_argument('--show_on_wandb', help="If True, sentences with patterns appear directly in the train set.",
-                        dest="include_patterns", action="store_true")
+    parser.add_argument('--show_on_wandb', help="",
+                        dest="show_on_wandb", action="store_true")
 
     args = parser.parse_args()
     project = f"{args.prefix}{args.dataset}"

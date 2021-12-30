@@ -2,7 +2,7 @@ import jsonlines
 import spacy
 import argparse
 import csv
-import os
+from tqdm import tqdm
 
 nlp = spacy.load("en_core_web_sm")
 
@@ -44,7 +44,7 @@ def read_spike_output(fp):
             positive = False
             output_path = f"./data/spike_matches/negative/{args.prefix}_neg.jsonl"
         with jsonlines.open(output_path, "w") as fout:
-            for row in reader:
+            for row in tqdm(reader):
                 idx = row["sentence_id"]
                 if positive:
                     captures = {"positive": {
