@@ -12,11 +12,12 @@
     <br />
     <a href="https://spike.apps.allenai.org/datasets"><strong>Visit SPIKE »</strong></a>
     <br />
-
-[//]: # (    <a href="https://github.com/github_username/repo_name/issues">Visit our blog page  »</a>)
+    <a href="mailto:AI2Israel-info@allenai.org">Contact Us</a>
     <br />
 
-[//]: # (    <a href="https://github.com/github_username/repo_name/issues">Contact Us</a>)
+[//]: # (    <a href="#">Visit our blog page  »</a>)
+
+[//]: # (    <br />)
   </p>
 </div>
 
@@ -231,6 +232,7 @@ Distributed under the Apache License. See `LICENSE` for more information.
 
 ## Contact
 
+For any question, you are welcome to [contact us](mailto:AI2Israel-info@allenai.org)
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 
