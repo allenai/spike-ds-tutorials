@@ -63,7 +63,7 @@ def get_capture(sentence, label):
 
 def get_entities(sentence, cap_first, cap_last):
     entities = set()
-    for e in sentence['entities']:
+    for e in sentence['sentence']['entities']:
         all_entity_indices = [*range(e['first'], e['last'])]
         if all(x not in all_entity_indices for x in [cap_first, cap_last]):
             entities.add((e['first'], e['last']))
@@ -75,13 +75,8 @@ def collect_train_set_sentences():
     train_set = dict()
     dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
-    same_sent = 0
     for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
-            if not args.include_patterns:
-                if not (file.endswith("_neg.jsonl") or file.endswith("exemplars.jsonl")):
-                    print(file)
-                    continue
             for sentence_dict in f:
                 label = file.split("/")[-2]
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
@@ -131,16 +126,13 @@ def collect_train_set_sentences():
                             "entities": {},
                             "need_tagging": False
                         }
-                    else:
-                        same_sent += 1
 
     # make sure there are significantly more negative examples than positive ones.
     negatives = [(x, y) for x, y in train_set.items() if y["label"] != 'positive']
     positives = [(x, y) for x, y in train_set.items() if y["label"] == 'positive']
-    print("Number of negatives: ", len(negatives))
-    print("Number of positives: ", len(positives))
+    print("Number of sentences with no positives: ", len(negatives))
+    print("Number of sentences with (any) positives: ", len(positives))
     print("invalids: ", invalids)
-    print("same_sent: ", same_sent)
 
     return train_set
 
@@ -223,7 +215,5 @@ if __name__ == "__main__":
     parser.add_argument('--prefix', help='', default="")
     parser.add_argument('--target_tag', help='', default="SCHOOL")
     parser.add_argument('--superclass_tag', help='', default="ORG")
-    parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
-                        dest="include_patterns", action="store_true")
     args = parser.parse_args()
     main()

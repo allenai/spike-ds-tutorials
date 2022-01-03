@@ -29,14 +29,20 @@ def collect_matches_with_patterns(positive_files, set_type):
             print(f"number of matches for file {file}: {len(matches)}")
             if matches:
                 for match in matches:
-                    capture = get_capture_text(match, args.label)
+                    if match.get('kind') in ['continuation_url', 'tip']: continue
+                    match = match["value"]["sub_matches"]["main"]
+                    try:
+                        capture = get_capture_text(match, args.label)
+                    except:
+                        raise Exception(match)
                     if args.max_duplicates > 0:
-                        if captures[capture] > args.max_duplicates:
+                        if captures[capture] >= args.max_duplicates:
                             continue
+                    match.pop('metadata', None)
+                    match["sentence"].pop('word_senses', None)
+                    match.pop('kb_entities', None)
                     f.write(match)
                     captures[capture] += 1
-                sorted_matches = {k: v for k, v in sorted(captures.items(), key=lambda item: item[1], reverse=True) if v > 1}
-                print(f"counter: {sorted_matches}")
             else:
                 print("no matches")
 
