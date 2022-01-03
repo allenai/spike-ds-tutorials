@@ -31,18 +31,16 @@ def collect_matches_with_patterns(positive_files, set_type):
                 for match in matches:
                     if match.get('kind') in ['continuation_url', 'tip']: continue
                     match = match["value"]["sub_matches"]["main"]
-                    try:
+                    if set_type == "positive":
                         capture = get_capture_text(match, args.label)
-                    except:
-                        raise Exception(match)
-                    if args.max_duplicates > 0:
-                        if captures[capture] >= args.max_duplicates:
-                            continue
+                        if args.max_duplicates > 0:
+                            if captures[capture] >= args.max_duplicates:
+                                continue
+                        captures[capture] += 1
                     match.pop('metadata', None)
                     match["sentence"].pop('word_senses', None)
                     match.pop('kb_entities', None)
                     f.write(match)
-                    captures[capture] += 1
             else:
                 print("no matches")
 
