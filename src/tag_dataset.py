@@ -6,28 +6,10 @@ import argparse
 from pathlib import Path
 
 
-def remove_tags(sentence):
-    tokens = []
-    for t in sentence.split():
-        if t:
-            tokens.append(t.split('-[',1)[0])
-    return clean_punct(" ".join(tokens))
-
-
 def clean_punct(sentence):
     s = sentence.translate(str.maketrans('', '', string.punctuation))
     s = s.replace("  ", " ")
     return s
-
-
-def get_dev_and_test_sentences(dataset_path):
-    test_path = dataset_path + '/test.txt'
-    dev_path = dataset_path + '/dev.txt'
-    with open(test_path, 'r') as ft, open(dev_path, 'r') as fd:
-        test_set = [remove_tags(sent.strip()) for sent in ft.readlines()]
-        dev_set = [remove_tags(sent.strip()) for sent in fd.readlines()]
-    dev_and_test = dev_set + test_set
-    return dev_and_test
 
 
 def sentence_is_not_too_short(sentence_text):
@@ -39,13 +21,11 @@ def capture_is_not_non_alphabetical(capture_text):
     return any(x in capture_text for x in alphabet)
 
 
-def validate_sentence(capture_text, sentence_text, dev_and_test):
+def validate_sentence(capture_text, sentence_text):
     if not capture_is_not_non_alphabetical(capture_text):
         return False
     if not sentence_is_not_too_short(sentence_text):
         return False
-#     if sentence_text in dev_and_test:
-#         return False
     return True
 
 
@@ -73,16 +53,16 @@ def get_entities(sentence, cap_first, cap_last):
 def collect_train_set_sentences():
     spike_matches_path = f"./data/spike_matches"
     train_set = dict()
-    dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
-    for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
+    group_of_files = "**" if args.include_only_o else "positive"
+    for file in glob.glob(f'{spike_matches_path}/{group_of_files}/{args.prefix}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
             for sentence_dict in f:
                 label = file.split("/")[-2]
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
                 capture_text, cap_first, cap_last = get_capture(sentence_dict, label)
                 if capture_text:
-                    if not validate_sentence(capture_text, sentence_text, dev_and_test):
+                    if not validate_sentence(capture_text, sentence_text):
                         invalids += 1
                         continue
                     if sentence_text not in train_set.keys():
@@ -214,6 +194,8 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', help='', default="schools")
     parser.add_argument('--prefix', help='', default="")
     parser.add_argument('--target_tag', help='', default="SCHOOL")
-    parser.add_argument('--superclass_tag', help='', default="ORG")
+    parser.add_argument('--superclass_tag', help='', default="")
+    parser.add_argument('--include_only_o', help="If True, sentences with patterns appear directly in the train set.",
+                        dest="add_negatives", action="store_true")
     args = parser.parse_args()
     main()

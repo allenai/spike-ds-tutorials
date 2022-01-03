@@ -1,6 +1,4 @@
 import glob
-import json
-import requests
 from tqdm import tqdm
 from collections import defaultdict
 import jsonlines
@@ -28,7 +26,7 @@ def collect_matches_with_patterns(positive_files, set_type):
             shuffle(matches)
             print(f"number of matches for file {file}: {len(matches)}")
             if matches:
-                for match in matches:
+                for match in tqdm(matches):
                     if match.get('kind') in ['continuation_url', 'tip']: continue
                     match = match["value"]["sub_matches"]["main"]
                     if set_type == "positive":
