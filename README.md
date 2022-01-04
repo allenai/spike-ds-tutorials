@@ -68,9 +68,9 @@ You can also use our script for training a NER model. The script uses [SimpleTra
    git clone https://github.com/allenai/spike-ds-tutorials.git
    ```
 2. Install Python packages. You can simply run
-```
-python -m pip install -r requirements.txt
-```
+   ```
+   python -m pip install -r requirements.txt
+   ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
