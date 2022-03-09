@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', help='', default="schools")
     parser.add_argument('--prefix', help='', default="unique_")
     parser.add_argument('--target_tag', help='', default="SCHOOL")
-    parser.add_argument('--superclass_tag', help='', default="ORG")
+    parser.add_argument('--superclass_tag', help='', default="")
     parser.add_argument('--batch_size', help='', default="64")
     parser.add_argument('--epochs', help='', default="3")
     parser.add_argument('--experiment', help='', default="")

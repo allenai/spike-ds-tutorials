@@ -196,6 +196,6 @@ if __name__ == "__main__":
     parser.add_argument('--target_tag', help='', default="SCHOOL")
     parser.add_argument('--superclass_tag', help='', default="")
     parser.add_argument('--include_only_o', help="If True, sentences with patterns appear directly in the train set.",
-                        dest="add_negatives", action="store_true")
+                        dest="include_only_o", action="store_true")
     args = parser.parse_args()
     main()

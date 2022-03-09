@@ -5,7 +5,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10
+        "limit": 1000
     },
     "1": {
         "query": "<E>positive:[e=ORG]Yale is an $[l={institute}]institute",
@@ -13,7 +13,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10
+        "limit": 1000
     },
     "2": {
         "query": "$[l={institute}]institutes $including <E>positive:[e=ORG]Yale",
@@ -21,7 +21,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10
+        "limit": 1000
     },
     "3": {
         "query": "Jane got her $[w={certificate}]degree from <E>positive:[e=ORG]Yale",
@@ -29,7 +29,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute", "certificate"],
-        "limit": 10
+        "limit": 1000
     },
     "4": {
         "query": "Jane $graduated from <E>positive:[e=ORG]Yale",
@@ -37,7 +37,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute", "certificate"],
-        "limit": 10
+        "limit": 1000
     },
     "5": {
         "query": "<E>positive:[e=PERSON]Yale $and $other $[l={institute}]institutes",
@@ -45,7 +45,7 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10
+        "limit": 1000
     },
     "6": {
         "query": "$such $[l={institute}]institutes as <E>positive:[e=PERSON]Yale",
@@ -53,6 +53,6 @@
         "case_strategy": "ignore",
         "label": "positive",
         "lists": ["institute"],
-        "limit": 10
+        "limit": 1000
     }
 }
