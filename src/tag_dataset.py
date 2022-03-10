@@ -44,20 +44,26 @@ def get_capture(sentence, label):
 def get_entities(sentence, cap_first, cap_last):
     entities = set()
     for e in sentence['sentence']['entities']:
-        all_entity_indices = [*range(e['first'], e['last'])]
+        try:
+            all_entity_indices = [*range(e['first'], e['last'])]
+        except:
+            raise Exception(sentence)
         if all(x not in all_entity_indices for x in [cap_first, cap_last]):
             entities.add((e['first'], e['last']))
     return entities
 
 
 def collect_train_set_sentences():
-    spike_matches_path = f"./data/spike_matches"
+    spike_matches_path = f"./data/spike_jsonl"
     train_set = dict()
     invalids = 0
     group_of_files = "**" if args.include_only_o else "positive"
-    for file in glob.glob(f'{spike_matches_path}/{group_of_files}/{args.prefix}*.jsonl', recursive=True):
+    for file in glob.glob(f'{spike_matches_path}/{group_of_files}/{args.filename}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
             for sentence_dict in f:
+                if not isinstance(sentence_dict["value"], dict):
+                    continue
+                sentence_dict = sentence_dict["value"]["sub_matches"]["main"]
                 label = file.split("/")[-2]
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
                 capture_text, cap_first, cap_last = get_capture(sentence_dict, label)
@@ -176,24 +182,23 @@ def split_train_dev_test(fp, sample=False):
 
 
 def main():
-    dataset_path = f"./data/{args.dataset}"
-    Path(dataset_path).mkdir(parents=True, exist_ok=True)
+    destination_path = f"./data/{args.dataset}"
+    Path(destination_path).mkdir(parents=True, exist_ok=True)
     train_set = collect_train_set_sentences()
-
-    with jsonlines.open(f'{dataset_path}/{args.prefix}dataset.jsonl', 'w') as f:
+    with jsonlines.open(f'{destination_path}/{args.prefix}dataset.jsonl', 'w') as f:
         for sent in sample([v for v in train_set.values()], len(train_set)):
             tags = tag_sentence_one_token_per_row(sent)
             sent_json = {"id": sent["id"], "sent_items": tags}
             f.write(sent_json)
-    split_train_dev_test(f'{dataset_path}/{args.prefix}dataset.jsonl', sample=True)
+    split_train_dev_test(f'{destination_path}/{args.prefix}dataset.jsonl', sample=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument("-fn", "--filename", help="Name of source file (the jsonl name, as you saved it, without the extention).", type=str, required=True)
+    parser.add_argument("-d", "--dataset", help="Name of destination path (created automatically)", type=str, required=True)
+    parser.add_argument("-t", "--target_tag", help="label to tag target entites.", type=str, required=True)
     parser.add_argument('--prefix', help='', default="")
-    parser.add_argument('--target_tag', help='', default="SCHOOL")
     parser.add_argument('--superclass_tag', help='', default="")
     parser.add_argument('--include_only_o', help="If True, sentences with patterns appear directly in the train set.",
                         dest="include_only_o", action="store_true")

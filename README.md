@@ -79,63 +79,16 @@ You can also use our script for training a NER model. The script uses [SimpleTra
 
 Before running the scripts for dataset creation and learning, let's have a look at the patterns that make the input for SPIKE. 
 
-### Update Patterns
-
-
-As a starting point, make a copy of the file `./patterns/hearst_patterns.json`, and edit it to suit your case. [Hearst patterns](https://aclanthology.org/C92-2082.pdf) are designed to get hyponyms (lexical items that belong to a higher category). 
-For example, if you are interested in identifying tech products, change your query from
+### Getting Data
+The following scripts are based on the output of SPIKE's jsonlines output file. Check out our blog post for a detailed example.
+To sum up, 
+1. run the following [query in SPIKE](https://spike.apps.allenai.org/datasets/wikipedia/search#query=eyJtYWluIjoie1widHlwZVwiOlwiQlwiLFwiY29udGVudFwiOlwicG9zaXRpdmU6dz17c2Nob29sczowZGE1MjM5Mzc3ZTQyNGFhYzFjZmRiNTY4YjlkZDJiODdkMmFiZmI3YmViOGJlNDExMjViZWU1NWU4MjQ4ZDM4fSZlPU9SR1wifSIsImZpbHRlcnMiOiJbXSIsImNhc2VTdHJhdGVneSI6Imlnbm9yZSJ9&autoRun=true):
 ```
-$[l={roles}]schools $such as <E>positive:e=ORG
+positive:w={schools}&e=ORG
 ```
-to
-```
-$[l={products}]devices $such as <E>positive:e=PRODUCT
-```
-where `{products}` represents a list of words. To create such a list, create a new file named `products.txt` under `./data/lists`.
-The list of items should be a breakdown of the category, one item in each line, like so:
-```
-device
-software
-hardware
-smartphone
-gadget
-app
-```
-and so on. Note that since we search the lemma, the items in the list should be in singular form.
-Update your list name in the json in `lists` as well, anywhere needed. See example in the next section.
-
-#### Strcuture of patterns.json
-Each pattern in the pattern json file has the following fields:
-```
-        "query": "$[l={institutes}]schools $such as <E>positive:e=ORG",
-        "type": "syntactic",
-        "case_strategy": "ignore",
-        "label": "positive",
-        "lists": ["institutes"],
-        "limit": 10000
-```
-* query - the text to search for in SPIKE. See [help file](https://spike.staging.apps.allenai.org/datasets/pubmed/search/help) for more information.
-* type - type of query. Possible values include:
-  * `boolean` for basic queries 
-  * `syntactic` for structurally based queries
-  * `token` for sequence based queries.
-* case strategy - whether the search should be case-sensitive or not. Possible values: 
-  * `ignore` - entire query is case-insensitive
-  * `exact` - entire query is case-sensitive
-  * `smart` - only cased items in the query are case-sensitive
-* label - in the context of this code-base, always leave it `positive`.
-* lists - which lists participate in the query. For each list, make sure there is an equivalent file under `./data/lists`
-* limit - how many results to retrieve from SPIKE **per this query**. 
-
-<details>
-<summary>Find More Results</summary>
-The patterns file contain patterns known as `hearst patterns` (citation needed), and they are doing a great job at finding relevant examples.
-However, some products may never appear along the explicit name of the category/subcategory. 
-If you need more examples, you can try and create more patterns, which may require more lists.
-For inspiration, you may find more examples of non-hearst patterns in `./patterns/school_patterns.json` and `./patterns/musicians_patterns.json`.
-It is advised that you run your new queries directly in SPIKE, to verify that you get reasonable results. See our blog post for more information.
-
-</details>
+2. Click on "Download Results" in the top right corner, and choose *JSON Lines*. Save the file in `./data/spike_jsonl/positive`
+3. If you want to include examples without schools at all, run a query like this , and save the results in `./data/spike_jsonl/negative`
+The code can supposrt multiple files in each of the directories. 
 
 ### SCRIPT 1: Collect data using SPIKE API
 
