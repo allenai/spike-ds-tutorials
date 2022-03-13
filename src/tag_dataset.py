@@ -195,12 +195,12 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-fn", "--filename", help="Name of source file (the jsonl name, as you saved it, without the extention).", type=str, required=True)
     parser.add_argument("-d", "--dataset", help="Name of destination path (created automatically)", type=str, required=True)
-    parser.add_argument("-t", "--target_tag", help="label to tag target entites.", type=str, required=True)
+    parser.add_argument("-t", "--target_tag", help="label to tag target entities.", type=str, required=True)
+    parser.add_argument("-fn", "--filename", help="Name of source file (the jsonl name, as you saved it, without the extention).", type=str, default="results")
     parser.add_argument('--prefix', help='', default="")
     parser.add_argument('--superclass_tag', help='', default="")
-    parser.add_argument('--include_only_o', help="If True, sentences with patterns appear directly in the train set.",
+    parser.add_argument('--include_only_o', help="If True, includes sentences with no positive instances.",
                         dest="include_only_o", action="store_true")
     args = parser.parse_args()
     main()

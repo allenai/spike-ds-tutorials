@@ -66,9 +66,9 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', help='', default="schools")
+    parser.add_argument("-d", "--dataset", help="Name of source path", type=str, required=True)
+    parser.add_argument("-t", "--target_tag", help="label of tagged target entities.", type=str, required=True)
     parser.add_argument('--prefix', help='', default="unique_")
-    parser.add_argument('--target_tag', help='', default="SCHOOL")
     parser.add_argument('--superclass_tag', help='', default="")
     parser.add_argument('--batch_size', help='', default="64")
     parser.add_argument('--epochs', help='', default="3")

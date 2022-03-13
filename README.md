@@ -41,14 +41,12 @@ This project provides tools to build a dataset for NER using AI2's SPIKE extract
 
 SPIKE is an extractive search system. It is a power-tool for search-based information extraction.
 
-SPIKE's API to obtain sentences where the relevant entities are tagged as captures.
-
 SPIKE queries retrieve sentences based on patterns of text, which are searched on a background dataset (Wikipedia for example). These patterns can be:
 * basic search - matches keywords anywhere in the sentence (e.g. `:e=ORG graduated`) 
 * sequence search -  matches sequences of keywords, in their given order (e.g. `<>:e=ORG University`)
 * structure - matches the given syntactic structure (e.g. `A:someone $graduated from B:[e=ORG]somewhere` retrieves sentences where word A is the subject of `graduated` and word B is its object, regardless of word order). 
 
-We recommend reading SPIKE's help file to understand these concepts better. 
+We recommend reading SPIKE's [help file](https://spike.staging.apps.allenai.org/datasets/wikipedia/search/help) to understand these concepts better. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -59,7 +57,7 @@ We recommend reading SPIKE's help file to understand these concepts better.
 ## Getting Started
 
 Creating a dataset is as simple as running a couple of command lines. 
-You can also use our script for training a NER model. The script uses [SimpleTransformers](), which in turn uses Weights and Biases (wandb). You can create an account in [wandb](https://wandb.ai/site) to see the progress of your training.
+You can also use our script for training a NER model. The script uses [SimpleTransformers](https://simpletransformers.ai/), which in turn uses Weights and Biases (wandb). You can create an account in [wandb](https://wandb.ai/site) to see the progress of your training.
 
 
 ### Installation
@@ -72,14 +70,11 @@ You can also use our script for training a NER model. The script uses [SimpleTra
    ```
    python -m pip install -r requirements.txt
    ```
-
+   
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Usage
 
-Before running the scripts for dataset creation and learning, let's have a look at the patterns that make the input for SPIKE. 
-
-### Getting Data
 The following scripts are based on the output of SPIKE's jsonlines output file. Check out our blog post for a detailed example.
 To sum up, 
 1. run the following [query in SPIKE](https://spike.apps.allenai.org/datasets/wikipedia/search#query=eyJtYWluIjoie1widHlwZVwiOlwiQlwiLFwiY29udGVudFwiOlwicG9zaXRpdmU6dz17c2Nob29sczowZGE1MjM5Mzc3ZTQyNGFhYzFjZmRiNTY4YjlkZDJiODdkMmFiZmI3YmViOGJlNDExMjViZWU1NWU4MjQ4ZDM4fSZlPU9SR1wifSIsImZpbHRlcnMiOiJbXSIsImNhc2VTdHJhdGVneSI6Imlnbm9yZSJ9&autoRun=true):
@@ -88,30 +83,9 @@ positive:w={schools}&e=ORG
 ```
 2. Click on "Download Results" in the top right corner, and choose *JSON Lines*. Save the file in `./data/spike_jsonl/positive`
 3. If you want to include examples without schools at all, run a query like this , and save the results in `./data/spike_jsonl/negative`
-The code can supposrt multiple files in each of the directories. 
+The code can support multiple files in each of the directories, but you can supply a prefix (for example *results_1.jsonl*, *results_2.jsonl*, *results_3.jsonl* etc.) 
 
-### SCRIPT 1: Collect data using SPIKE API
-
-After updating your patterns, call SPIKE's API to fetch examples, using the `collect_data.py` script.
-The collection has two scenarios:
-1. Use the patterns to collect examples of entities (e.g. actual products). The examples are stored in `./data/lists/exemplars.txt`. Then, Another call to SPIKE is made, this time only collecting sentences where these examples appear, with the superclass tag (e.g. `PRODUCT`).
-2. The same as above, but the collected dataset also include sentences which directly contain the given patterns. This is less recommended, as your model might overfit to the patterns.
-
-Run the script:
-```
-python ./src/collect_data.py [--max_duplicates 5] [--prefix products_] --superclass_tag PRODUCT --patterns patterns-copy.json
-``` 
-These are the available parameters:
-* `--superclass_tag` - the type of entity you are looking for. If your desired capture is not an entity, leave an empty string.
-* `--prefix` - Adds a prefix to the output file name. Use this if you are making a version of the dataset and don't want to override the existing files.
-* `--patterns` - the name of your patterns file, e.g. products_patterns.json
-* `--max_duplicates` - Limit the number of times the same entity may appear in the collected dataset (int > 0). If unlimited (default), your model might memorize very common names (e.g. Madonna or Apple Music).   
-* `--include_patterns` - Flag this if you want sentences with patterns to appear directly in the train set. 
-* `--add_negatives` - Flag this if you want to add sentences with no mentions of the desired entity type to your dataset. 
-
-After running, uou should see a new file created under `./data/spike_matches`.
-
-### SCRIPT 2: Tag Collected Dataset
+### SCRIPT 1: Tag Collected Dataset
 
 Use the `tag_dataset.py` script to create a BIO-tagged version of the sentences. The output is a file with each line being a tagged sentence:
 ```
@@ -120,11 +94,12 @@ Use the `tag_dataset.py` script to create a BIO-tagged version of the sentences.
 [",", "O"], ["Massachusetts", "O"], [".", "O"]]}
 ```
 These are the parameters available for this script:
-* `--dataset` - The script will eventually save the tagged dataset files (including splits) in `./data/<dataset>`.    
-* `--prefix` - A prefix to add to the output files. This is helpful for tracking which data were collected for which version. 
-* `--target_tag` - e.g. `MUSICIAN`, `SCHOOL` or any other non-canonical entity type, which suits what you are trying to identify.
-* `--superclass_tag` - The canonical NER entity type to which the target tag belongs. For example, for target-tag school, superclass tag is `ORG`.
-* `--include_patterns` - If True, sentences with patterns appear directly in the train set.
+* `-fn/--filename` - either the basename of your spike output file (if there is only one) or a prefix (e.g. `-fn results` for *results_1.jsonl*, *results_2.jsonl* etc.)  
+* `-d/--dataset` - The script will eventually save the tagged dataset files (including splits) in `./data/<dataset>`.    
+* `-t/--target_tag` - e.g. `MUSICIAN`, `SCHOOL` or any other non-canonical entity type, which suits what you are trying to identify.
+* `--prefix` - Optional. A prefix to add to the output files. This is helpful for tracking which data were collected for which version. 
+* `--superclass_tag` - Optional. The canonical NER entity type to which the target tag belongs. For example, for target-tag school, superclass tag is `ORG`.
+* `--include_only_o` - Optional. This flag is relevant if you collected sentences without the target spans.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -145,23 +120,26 @@ The given evaluation script loads the model from the best model directory, and r
 * `--eval_on_entire_set` - By default, sentences in the eval set are not considered if their entity/capture appears in the train set. Flag this if you want the entire set to be evaluated.
 
 ## Running Example
+
 To identify educational institutes, we created a patterns file called `school_patterns.json`, which involves two list files: `institute` and `certificate`.
+There are three different scenarios - 
+1. Use the patterns in spike to collect names of schools into a list. Then run a simple query ([positive:w={schools}&e=ORG](https://spike.apps.allenai.org/datasets/wikipedia/search#query=eyJtYWluIjoie1widHlwZVwiOlwiQlwiLFwiY29udGVudFwiOlwicG9zaXRpdmU6dz17c2Nob29sc30mZT1PUkdcIn0iLCJmaWx0ZXJzIjoiW10iLCJjYXNlU3RyYXRlZ3kiOiJpZ25vcmUifQ==&autoRun=false)) to retrieve sentences with these names anywhere in the text.
+2. Run each pattern in spike, and save the files in their respective directories (in this case only positive). The number in *limit* denotes how many examples to download per pattern.
+3. Combine both #1 and #2, such that your dataset includes both sentences with a structure likely to contain a school name, and freestyle sentences, with no particular consistency.
+
+We recommend option #1 to avoid having the model memorizing a handful of patterns. 
 Some parameters are the same for all scripts, so we export them:
 ```
-$ export dataset=schools; export prefix="demo-"; export superclass=ORG; export target=SCH; export experiment=no-patterns-with-negs
+$ export filename results; export dataset=schools; export prefix="demo-"; export superclass=ORG; export target=SCH; export experiment=no-patterns-with-negs
 ```
 
-#### collecting data from spike
-```
-$ python src/collect_data.py --max_duplicates 5 --prefix $prefix --superclass_tag $superclass --patterns school_patterns.json --add_negatives
-```
 #### tagging dataset
 ```
-$ python src/tag_dataset.py --dataset $dataset --prefix $prefix --target_tag $target --superclass_tag $superclass
+$ python src/tag_dataset.py -fn $filename -d $dataset -t $target  --prefix $prefix --superclass_tag $superclass
 ```
 #### training the model
 ```
-$ python src/train.py --dataset $dataset --prefix $prefix --target_tag $target --superclass_tag $superclass --experiment $experiment
+$ python src/train.py -d $dataset -t $target --prefix $prefix --superclass_tag $superclass --experiment $experiment
 ```
 #### Evaluate the process
 ```
