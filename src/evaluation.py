@@ -1,4 +1,5 @@
-from sklearn.metrics import confusion_matrix, classification_report, ConfusionMatrixDisplay
+import sklearn.metrics as slmet
+import seqeval.metrics as sqmet
 import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
@@ -40,12 +41,12 @@ def get_golds_and_predictions(model):
     gold_tags = []
     pred_tags = []
 
-    with jsonlines.open(f"./data/{args.dataset}/{DEV}.jsonl", "r") as f:
+    with jsonlines.open(f"./data/{args.dataset}/{eval_set}.jsonl", "r") as f:
         for idx, line in enumerate(f):
             golds, preds = predict_sentence(model, idx, line)
             if golds and preds:
-                gold_tags.extend(golds)
-                pred_tags.extend([list(x.values())[0] for x in preds]) 
+                gold_tags.append(golds)
+                pred_tags.append([list(x.values())[0] for x in preds])
     return gold_tags, pred_tags
 
 
@@ -89,8 +90,8 @@ def get_complements_of_train(model, eval_set):
             if not found:
                 golds, preds = predict_sentence(model, idx, line)
                 if golds and preds:
-                    gold_tags.extend(golds)
-                    pred_tags.extend([list(x.values())[0] for x in preds])
+                    gold_tags.append(golds)
+                    pred_tags.append([list(x.values())[0] for x in preds])
     return gold_tags, pred_tags    
 
 
@@ -132,8 +133,12 @@ def tag_hits(df, pos, neg):
 
 
 def get_confusion_matrix(gold_tags, pred_tags, labels):
-    matrix = confusion_matrix(gold_tags, pred_tags, labels=labels, normalize="true")
+    matrix = slmet.confusion_matrix(gold_tags, pred_tags, labels=labels, normalize="true")
     return np.round(matrix, 3)
+
+
+def flatten(nested_list):
+    return [item for sublist in nested_list for item in sublist]
 
 
 def main():
@@ -145,16 +150,14 @@ def main():
         golds, preds = get_golds_and_predictions(model)
     else:
         golds, preds = get_complements_of_train(model, eval_set)
-    matrix = get_confusion_matrix(golds, preds, LABELS)
-    cls_report = classification_report(golds, preds, labels=LABELS)
+    matrix = get_confusion_matrix(flatten(golds), flatten(preds), LABELS)
+    cls_report = sqmet.classification_report(golds, preds)
     parsed_report = {x.strip()[0:5]:x.strip()[5:].split() for x in cls_report.split("\n")[2:] if not x.startswith("O")}
-    true_positive_spans, total_gold_positives = get_span_recall(golds, preds, args.target_tag, args.superclass_tag)
     print(f"confusion matrix:\n{matrix}")
-    print(f"span recall:\n{true_positive_spans / total_gold_positives} ({true_positive_spans}/{total_gold_positives})")
     print(f"classification report:\n{cls_report}")
     print(f"parsed classification report:\n{parsed_report}")
     document_results("./experiments", f"{wandb_project}-{args.experiment}", best_model_dir)
-    disp = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=LABELS)
+    disp = slmet.ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=LABELS)
     disp.plot()
     plt.show()
 
