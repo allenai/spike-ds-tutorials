@@ -133,6 +133,7 @@ def tag_hits(df, pos, neg):
 
 
 def get_confusion_matrix(gold_tags, pred_tags, labels):
+    print(labels)
     matrix = slmet.confusion_matrix(gold_tags, pred_tags, labels=labels, normalize="true")
     return np.round(matrix, 3)
 
@@ -168,7 +169,7 @@ if __name__ == "__main__":
                         required=True)
     parser.add_argument("-t", "--target_tag", help="label of tagged target entities.", type=str, required=True)
     parser.add_argument('--superclass_tag', help='The canonical NER entity type to which the target tag belongs.',
-                        default="ORG")
+                        default="")
     parser.add_argument('--experiment', help='If you run several experiments with the same dataset name '
                                              '(e.g. grid-search over hyper-parameters), specify a name for each '
                                              'specific experiment.', default="")
