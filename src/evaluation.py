@@ -94,7 +94,7 @@ def get_complements_of_train(model, eval_set):
     return gold_tags, pred_tags    
 
 
-def get_span_recall(golds, preds, positive_label, negative_label):
+def get_span_recall(golds, preds, positive_label, negative_label="O"):
     df = pd.DataFrame(zip(golds,preds), columns=["gold", "pred"])
     
     df["match"] = "_"
@@ -161,12 +161,16 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--target_tag', help='', default="SCHOOL")
-    parser.add_argument('--superclass_tag', help='', default="ORG")
-    parser.add_argument('--experiment', help='', default="")
-    parser.add_argument('--dataset', help='', default="schools")
-    parser.add_argument('--prefix', help='', default="")
+    parser.add_argument("-d", "--dataset", help="Name of source path. Only used here for deriving names.", type=str,
+                        required=True)
+    parser.add_argument("-t", "--target_tag", help="label of tagged target entities.", type=str, required=True)
+    parser.add_argument('--superclass_tag', help='The canonical NER entity type to which the target tag belongs.',
+                        default="ORG")
+    parser.add_argument('--experiment', help='If you run several experiments with the same dataset name '
+                                             '(e.g. grid-search over hyper-parameters), specify a name for each '
+                                             'specific experiment.', default="")
+    parser.add_argument('--prefix', help='A prefix that was added to the tagged files. This is helpful for tracking '
+                                         'which data were collected for which version.', default="")
     parser.add_argument('--eval_on_test', dest="eval_on_test", action="store_true")
     parser.add_argument('--eval_on_entire_set', dest="eval_on_entire_set", action="store_true")
 

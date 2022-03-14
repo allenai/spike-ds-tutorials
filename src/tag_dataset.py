@@ -6,28 +6,10 @@ import argparse
 from pathlib import Path
 
 
-def remove_tags(sentence):
-    tokens = []
-    for t in sentence.split():
-        if t:
-            tokens.append(t.split('-[',1)[0])
-    return clean_punct(" ".join(tokens))
-
-
 def clean_punct(sentence):
     s = sentence.translate(str.maketrans('', '', string.punctuation))
     s = s.replace("  ", " ")
     return s
-
-
-def get_dev_and_test_sentences(dataset_path):
-    test_path = dataset_path + '/test.txt'
-    dev_path = dataset_path + '/dev.txt'
-    with open(test_path, 'r') as ft, open(dev_path, 'r') as fd:
-        test_set = [remove_tags(sent.strip()) for sent in ft.readlines()]
-        dev_set = [remove_tags(sent.strip()) for sent in fd.readlines()]
-    dev_and_test = dev_set + test_set
-    return dev_and_test
 
 
 def sentence_is_not_too_short(sentence_text):
@@ -39,13 +21,11 @@ def capture_is_not_non_alphabetical(capture_text):
     return any(x in capture_text for x in alphabet)
 
 
-def validate_sentence(capture_text, sentence_text, dev_and_test):
+def validate_sentence(capture_text, sentence_text):
     if not capture_is_not_non_alphabetical(capture_text):
         return False
     if not sentence_is_not_too_short(sentence_text):
         return False
-#     if sentence_text in dev_and_test:
-#         return False
     return True
 
 
@@ -53,8 +33,8 @@ def get_capture(sentence, label):
     tokens = sentence["words"]
     capture = sentence['captures'].get(label)
     if capture:
-        first = capture['first']
-        last = capture['last']
+        first = int(capture['first'])
+        last = int(capture['last'])
         capture_tokens = [t for i, t in enumerate(tokens) if first <= i <= last]
         return " ".join(capture_tokens), first, last
     else:
@@ -63,31 +43,32 @@ def get_capture(sentence, label):
 
 def get_entities(sentence, cap_first, cap_last):
     entities = set()
-    for e in sentence['entities']:
-        all_entity_indices = [*range(e['first'], e['last'])]
+    for e in sentence['sentence']['entities']:
+        try:
+            all_entity_indices = [*range(e['first'], e['last'])]
+        except:
+            raise Exception(sentence)
         if all(x not in all_entity_indices for x in [cap_first, cap_last]):
             entities.add((e['first'], e['last']))
     return entities
 
 
 def collect_train_set_sentences():
-    spike_matches_path = f"./data/spike_matches"
+    spike_matches_path = f"./data/spike_jsonl"
     train_set = dict()
-    dev_and_test = None  # get_dev_and_test_sentences(dataset_path)
     invalids = 0
-    same_sent = 0
-    for file in glob.glob(f'{spike_matches_path}/**/{args.prefix}*.jsonl', recursive=True):
+    group_of_files = "**" if args.include_only_o else "positive"
+    for file in glob.glob(f'{spike_matches_path}/{group_of_files}/{args.filename}*.jsonl', recursive=True):
         with jsonlines.open(file, "r") as f:
-            if not args.include_patterns:
-                if not (file.endswith("_neg.jsonl") or file.endswith("exemplars.jsonl")):
-                    print(file)
-                    continue
             for sentence_dict in f:
+                if not isinstance(sentence_dict["value"], dict):
+                    continue
+                sentence_dict = sentence_dict["value"]["sub_matches"]["main"]
                 label = file.split("/")[-2]
                 sentence_text = clean_punct(" ".join(sentence_dict["words"])).strip()
                 capture_text, cap_first, cap_last = get_capture(sentence_dict, label)
                 if capture_text:
-                    if not validate_sentence(capture_text, sentence_text, dev_and_test):
+                    if not validate_sentence(capture_text, sentence_text):
                         invalids += 1
                         continue
                     if sentence_text not in train_set.keys():
@@ -131,16 +112,13 @@ def collect_train_set_sentences():
                             "entities": {},
                             "need_tagging": False
                         }
-                    else:
-                        same_sent += 1
 
     # make sure there are significantly more negative examples than positive ones.
     negatives = [(x, y) for x, y in train_set.items() if y["label"] != 'positive']
     positives = [(x, y) for x, y in train_set.items() if y["label"] == 'positive']
-    print("Number of negatives: ", len(negatives))
-    print("Number of positives: ", len(positives))
+    print("Number of sentences with no positives: ", len(negatives))
+    print("Number of sentences with (any) positives: ", len(positives))
     print("invalids: ", invalids)
-    print("same_sent: ", same_sent)
 
     return train_set
 
@@ -204,26 +182,29 @@ def split_train_dev_test(fp, sample=False):
 
 
 def main():
-    dataset_path = f"./data/{args.dataset}"
-    Path(dataset_path).mkdir(parents=True, exist_ok=True)
+    destination_path = f"./data/{args.dataset}"
+    Path(destination_path).mkdir(parents=True, exist_ok=True)
     train_set = collect_train_set_sentences()
-
-    with jsonlines.open(f'{dataset_path}/{args.prefix}dataset.jsonl', 'w') as f:
+    with jsonlines.open(f'{destination_path}/{args.prefix}dataset.jsonl', 'w') as f:
         for sent in sample([v for v in train_set.values()], len(train_set)):
             tags = tag_sentence_one_token_per_row(sent)
             sent_json = {"id": sent["id"], "sent_items": tags}
             f.write(sent_json)
-    split_train_dev_test(f'{dataset_path}/{args.prefix}dataset.jsonl', sample=True)
+    split_train_dev_test(f'{destination_path}/{args.prefix}dataset.jsonl', sample=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
-    parser.add_argument('--dataset', help='', default="schools")
-    parser.add_argument('--prefix', help='', default="")
-    parser.add_argument('--target_tag', help='', default="SCHOOL")
-    parser.add_argument('--superclass_tag', help='', default="ORG")
-    parser.add_argument('--include_patterns', help="If True, sentences with patterns appear directly in the train set.",
-                        dest="include_patterns", action="store_true")
+    parser.add_argument("-d", "--dataset", help="Name of destination path (created automatically)", type=str,
+                        required=True)
+    parser.add_argument("-t", "--target_tag", help="label to tag target entities.", type=str, required=True)
+    parser.add_argument("-fn", "--filename", help="Name of source file (the jsonl name, as you saved it, without the "
+                                                  "extention).", type=str, default="results")
+    parser.add_argument('--prefix', help='A prefix to add to the output files. This is helpful for tracking which data '
+                                         'were collected for which version.', default="")
+    parser.add_argument('--superclass_tag', help='The canonical NER entity type to which the target tag belongs.',
+                        default="")
+    parser.add_argument('--include_only_o', help="If True, includes sentences with no positive instances.",
+                        dest="include_only_o", action="store_true")
     args = parser.parse_args()
     main()

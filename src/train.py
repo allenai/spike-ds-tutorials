@@ -66,15 +66,19 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', help='', default="schools")
-    parser.add_argument('--prefix', help='', default="unique_")
-    parser.add_argument('--target_tag', help='', default="SCHOOL")
-    parser.add_argument('--superclass_tag', help='', default="ORG")
-    parser.add_argument('--batch_size', help='', default="64")
-    parser.add_argument('--epochs', help='', default="3")
-    parser.add_argument('--experiment', help='', default="")
-    parser.add_argument('--show_on_wandb', help="If True, sentences with patterns appear directly in the train set.",
-                        dest="include_patterns", action="store_true")
+    parser.add_argument("-d", "--dataset", help="Name of source path", type=str, required=True)
+    parser.add_argument("-t", "--target_tag", help="label of tagged target entities.", type=str, required=True)
+    parser.add_argument('--prefix', help='A prefix that was added to the tagged files. This is helpful for tracking '
+                                         'which data were collected for which version.', default="unique_")
+    parser.add_argument('--superclass_tag', help='The canonical NER entity type to which the target tag belongs.',
+                        default="")
+    parser.add_argument('--batch_size', help='batch size for training', default="64")
+    parser.add_argument('--epochs', help='Number of epochs', default="3")
+    parser.add_argument('--experiment', help='If you run several experiments with the same dataset name '
+                                             '(e.g. grid-search over hyper-parameters), specify a name for each '
+                                             'specific experiment.', default="")
+    parser.add_argument('--show_on_wandb', help="",
+                        dest="show_on_wandb", action="store_true")
 
     args = parser.parse_args()
     project = f"{args.prefix}{args.dataset}"
