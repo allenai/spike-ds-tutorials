@@ -14,10 +14,6 @@
     <br />
     <a href="mailto:AI2Israel-info@allenai.org">Contact Us</a>
     <br />
-
-[//]: # (    <a href="#">Visit our blog page  »</a>)
-
-[//]: # (    <br />)
   </p>
 </div>
 
