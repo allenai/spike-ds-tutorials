@@ -94,7 +94,7 @@ def get_complements_of_train(model, eval_set):
     return gold_tags, pred_tags    
 
 
-def get_span_recall(golds, preds, positive_label, negative_label):
+def get_span_recall(golds, preds, positive_label, negative_label="O"):
     df = pd.DataFrame(zip(golds,preds), columns=["gold", "pred"])
     
     df["match"] = "_"

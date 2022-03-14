@@ -2,7 +2,7 @@ import pandas as pd
 import jsonlines
 import pytest
 import os
-from src.train_with_simpletransformers import get_confusion_matrix, get_span_recall
+from src.evaluation import get_confusion_matrix, get_span_recall
 
 
 @pytest.fixture(scope="session")
@@ -48,22 +48,6 @@ def get_golds_and_predictions(filepath):
     golds = df["gold"].tolist()
     preds = df["pred"].tolist()
     return golds, preds
-
-
-def test_bad_model_spans_eval(bad_sample):
-    report, true_positive_spans, total_gold_positives = get_span_recall(bad_sample, "MUS", "PER")
-    assert float(report["B-MUS"][2]) == 0.6, report
-    true_positives = true_positive_spans.values[0]
-    assert true_positives == 0
-    assert true_positives / total_gold_positives.values[0] == 0, f"{true_positive_spans}, {total_gold_positives}"
-
-
-def test_good_model_spans_eval(good_sample):
-    report, true_positive_spans, total_gold_positives =  get_span_recall(good_sample, "MUS", "PER")
-    assert float(report["B-MUS"][2]) == 1.00, report
-    true_positives = true_positive_spans.values[0]
-    assert true_positives == 2
-    assert true_positives / total_gold_positives.values[0] == 1, f"{true_positive_spans}, {total_gold_positives}"
 
 
 def test_good_confusion_matrix(good_sample, labels):
